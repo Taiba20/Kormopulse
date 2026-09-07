@@ -1,0 +1,52 @@
+:root {
+  --total-brand: 20;
+  --logo-width: 12rem;
+  --total-logo-width: calc(
+    var(var(--total-brand) * var(var(--logo-width) * 2))
+  );
+}
+
+.silder {
+  position: relative;
+  height: 12rem;
+  background-color: var(--color-background);
+  box-shadow: 0 0.8rem -0.2rem #0001;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-top: 1px solid var(--color-neutral-300);
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.silder::before,
+.silder::after {
+  position: absolute;
+  content: "";
+  height: 100%;
+  width: var(--logo-width);
+}
+.silder::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-background), #0000 100%);
+}
+.silder::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-background), #0000 100%);
+}
+.silder ul.brands {
+  list-style: none;
+  width: (var(--total-logo-width));
+  display: flex;
+  animation: slideLeft 14s linear infinite;
+}
+@keyframes slideLeft {
+  100% {
+    transform: translateX(calc(-20% / 2));
+  }
+}
+ul.brands li.brand-logo {
+  width: var(--logo-width);
+  font-size: 2rem;
+  text-align: center;
+  margin-left: 3rem;
+}

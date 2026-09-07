@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100..900&display=swap');
+@import "tailwindcss";
+
+
+@theme {
+  --font-poppins: 'Poppins', sans-serif;
+  
+  /* Color Palette */
+  --color-primary: #9E0A57;
+  --color-primary-dark: #731053;
+  --color-primary-light: #BD134F;
+  
+  /* Secondary Colors */
+  --color-secondary: #731053;
+  --color-secondary-light: #9E0A57;
+  --color-secondary-dark: #5A0A3F;
+  
+  /* Accent Colors */
+  --color-accent: #BD134F;
+  --color-accent-light: #E6396B;
+  --color-accent-dark: #9E0A57;
+  
+  /* Neutral Colors */
+  --color-neutral-50: #FAFAFA;
+  --color-neutral-100: #F5F5F5;
+  --color-neutral-200: #EEEEEE;
+  --color-neutral-300: #E0E0E0;
+  --color-neutral-400: #BDBDBD;
+  --color-neutral-500: #9E9E9E;
+  --color-neutral-600: #757575;
+  --color-neutral-700: #616161;
+  --color-neutral-800: #424242;
+  --color-neutral-900: #212121;
+  
+  /* Background Colors */
+  --color-background: #FFFFFF;
+  --color-background-secondary: #F8F9FA;
+  --color-background-tertiary: #F1F3F4;
+  
+  /* Text Colors */
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-muted: #9E9E9E;
+  --color-text-inverse: #FFFFFF;
+  
+  /* Success, Warning, Error */
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #F44336;
+
+  --bg-gradient:linear-gradient(to right top, #9e0a57, #960b57, #8e0c57, #860e56, #7e0f55, #810e55, #830e55, #860d55, #940b55, #a20b54, #b00e52, #bd134f);
+}
+
+* {
+  font-family: var(--font-poppins);
+}
