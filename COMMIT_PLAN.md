@@ -15,12 +15,12 @@ Use the commits below in order. Each is intentionally small enough to demonstrat
 
 These are intentionally small additions for the next progress update.
 
-1. `feat(api): add no-database demo overview`
-   - Add `/api/demo/overview` and let the backend start in demo mode before MongoDB is ready.
-2. `feat(ui): show project progress on home page`
-   - Add a compact Kormopulse demo checklist section to the home page.
-3. `docs: document demo-mode progress checks`
-   - Explain how to check the project without MongoDB.
+1. `feat(api): add demo roadmap endpoint`
+   - Add a database-independent `/api/demo/overview` response.
+2. `feat(ui): preview demo jobs on home page`
+   - Fetch and display featured demo jobs on the home page.
+3. `chore(demo): add demo api script`
+   - Add the root demo command and document the endpoint.
 
 After committing, connect the new repository to its own remote (not the existing parent repository's remote) and push:
 
