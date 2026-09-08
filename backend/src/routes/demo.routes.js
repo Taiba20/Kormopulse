@@ -10,6 +10,20 @@ const demoOverview = {
     { label: "Partner companies", value: 8 },
     { label: "Applications tracked", value: 136 },
   ],
+  workflowPreviews: [
+    {
+      title: "Candidate workflow",
+      steps: ["Create profile", "Save jobs", "Track applications"],
+    },
+    {
+      title: "Employer workflow",
+      steps: ["Create company profile", "Post a role", "Review applicants"],
+    },
+    {
+      title: "Platform workflow",
+      steps: ["Discover opportunities", "Connect with teams", "Move forward"],
+    },
+  ],
   featuredJobs: [
     {
       id: "demo-frontend-engineer",
