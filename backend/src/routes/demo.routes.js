@@ -36,7 +36,7 @@ const demoOverview = {
 };
 
 router.get("/overview", (req, res) => {
-  res.status(200).json(demoOverview);
+  res.status(200).json({ data: demoOverview });
 });
 
 export default router;
