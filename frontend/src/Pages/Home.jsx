@@ -6,6 +6,7 @@ import JobSeekers from "../components/Home/JobSeekers";
 import Hero from "../components/Home/Hero";
 import HomeStats from "../components/Home/HomeStats";
 import DemoProgress from "../components/Home/DemoProgress";
+import WorkflowPreview from "../components/Home/WorkflowPreview";
 import HomeRecruiters from "../components/Home/HomeRecruiters";
 import DemoJobs from "../components/Home/DemoJobs";
 import Footer from "../components/Home/Footer";
@@ -35,6 +36,7 @@ function Home() {
       <Hero />
       <HomeStats />
       <DemoProgress />
+      <WorkflowPreview />
       <DemoJobs />
       <LogoSlider />
       <JobSeekers />
