@@ -33,7 +33,8 @@ Kormopulse connects job seekers and employers. Job seekers build profiles, searc
 ### Platform
 - JWT authentication with refresh tokens and role-based access (job seeker / employer).
 - Role-specific onboarding and dashboards.
-- Change-password and forgot-password flows.
+- Change-password flow and a forgot-password flow that emails a 6-digit reset code.
+- Email notifications: applicants and employers are emailed when an application is submitted, and candidates are emailed when they are shortlisted or hired.
 - Responsive UI built with Tailwind CSS.
 
 ## Tech stack
@@ -76,11 +77,13 @@ Backend (`backend/.env`):
 |----------|---------|
 | `PORT` | API port (default `8000`) |
 | `CORS_ORIGIN` | Comma-separated allowed origins (default `http://localhost:5173,http://localhost:5174`) |
+| `COOKIE_DOMAIN` | Optional: share auth cookies across subdomains in production (leave empty otherwise) |
 | `MONGODB_URL` | MongoDB connection string |
 | `ACCESS_TOKEN_SECRET`, `ACCESS_TOKEN_EXPIRY` | Access token signing secret and lifetime |
 | `REFRESH_TOKEN_SECRET`, `REFRESH_TOKEN_EXPIRY` | Refresh token signing secret and lifetime |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Image and resume uploads |
 | `GROQ_API_KEY` | AI job-description generation and skill-gap analysis |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Outgoing email (reset codes and application notifications) |
 
 Frontend (`frontend/.env`):
 
@@ -150,7 +153,7 @@ Base URL: `http://localhost:8000/api`. Protected routes need a valid access toke
 
 | Prefix | Examples |
 |--------|----------|
-| `/users` | `POST /signup`, `POST /login`, `POST /logout`, `GET /current-user`, `GET /profile`, `POST /profile-picture`, `POST /resume`, `POST /add-skill`, `GET /skill-gap/:jobId`, `POST /change-password`, `POST /forgot-password`, `GET /public-profile/:id` |
+| `/users` | `POST /signup`, `POST /login`, `POST /logout`, `GET /current-user`, `GET /profile`, `POST /profile-picture`, `POST /resume`, `POST /add-skill`, `GET /skill-gap/:jobId`, `POST /change-password`, `POST /forgot-password` (emails a code), `POST /reset-password` (code + new password), `GET /public-profile/:id` |
 | `/jobs` | `GET /jobs`, `GET /jobs/:id`, `POST /jobs`, `GET /companies`, `POST /apply/:id`, `POST /save/:id`, `GET /saved-jobs`, `GET /my-applications`, `GET /job-recommendations`, `POST /generate-job-description`, `POST /shortlist-candidate`, `POST /reject-candidate`, `POST /hire-candidate` |
 | `/company` | `GET /listings`, `GET /active-listings`, `GET /applications`, `POST /shortlist-candidate`, `GET /candidate-matches/:jobId` |
 | `/messages` | `GET /`, `POST /send`, `POST /send-chat-request`, `POST /:messageId/respond`, `GET /unread-count`, `PATCH /:messageId/read`, `PATCH /mark-all-read` |
@@ -159,6 +162,7 @@ Base URL: `http://localhost:8000/api`. Protected routes need a valid access toke
 ## Security
 
 - Passwords are hashed with bcryptjs.
+- Password reset codes are emailed, stored only as a hash, expire after 10 minutes, allow 5 attempts, and are single-use.
 - Access and refresh tokens are signed with JWT; protected routes go through the `verifyJWT` middleware.
 - User-provided HTML is sanitised with DOMPurify.
 - CORS origins are restricted through `CORS_ORIGIN`.

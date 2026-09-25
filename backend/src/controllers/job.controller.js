@@ -7,6 +7,12 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { generateJobDescription, generateJobRecommendations, matchCandidates } from "../utils/groqAi.service.js";
+import {
+  sendApplicationReceived,
+  sendNewApplicationAlert,
+  sendShortlisted,
+  sendHired,
+} from "../utils/mail.service.js";
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
 
@@ -20,6 +26,11 @@ const ping = (req, res) => {
 
 const authPing = (req, res) => {
   res.send("Job Auth is working");
+};
+
+const getCompanyName = async (job) => {
+  const company = await CompanyProfile.findById(job.company).select("companyName");
+  return company?.companyName || "the employer";
 };
 
 // Create a new job posting
@@ -435,6 +446,22 @@ const applyForJob = asyncHandler(async (req, res) => {
   await job.save();
   console.log("Job updated. New application count:", job.applicationCount);
 
+  // Email notifications (never throw; failures are only logged)
+  const companyName = await getCompanyName(job);
+  const employer = await User.findById(job.postedBy).select("name email");
+  void sendApplicationReceived({
+    to: req.user.email,
+    name: req.user.name,
+    jobTitle: job.title,
+    companyName,
+  });
+  void sendNewApplicationAlert({
+    to: employer?.email,
+    employerName: employer?.name,
+    applicantName: req.user.name,
+    jobTitle: job.title,
+  });
+
   console.log("=== Apply for Job Success ===");
   return res.status(200).json(
     new ApiResponse(200, { application }, "Job applied successfully")
@@ -821,6 +848,13 @@ const shortlistCandidate = asyncHandler(async (req, res) => {
     await job.save();
   }
 
+  void sendShortlisted({
+    to: application.applicant?.email,
+    name: application.applicant?.name,
+    jobTitle: job.title,
+    companyName: await getCompanyName(job),
+  });
+
   return res.status(200).json(
     new ApiResponse(200, application, "Candidate shortlisted successfully")
   );
@@ -985,6 +1019,14 @@ const hireCandidate = asyncHandler(async (req, res) => {
   if (!application) {
     throw new ApiError(404, "Application not found");
   }
+
+  const hiredUser = await User.findById(applicantId).select("name email");
+  void sendHired({
+    to: hiredUser?.email,
+    name: hiredUser?.name,
+    jobTitle: job.title,
+    companyName: await getCompanyName(job),
+  });
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Candidate hired successfully. Application has been removed.")

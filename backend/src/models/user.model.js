@@ -10,6 +10,10 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true },
     role: { type: String, required: true },
     refreshToken: String,
+    // Password reset via emailed code (only a hash of the code is stored)
+    passwordResetCodeHash: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
+    passwordResetAttempts: { type: Number, default: 0, select: false },
     // Keep userProfile for backward compatibility, but also add profile references
     userProfile: { type: Schema.Types.Mixed },
     jobSeekerProfile: { type: Schema.Types.ObjectId, ref: "JobSeekerProfile" },

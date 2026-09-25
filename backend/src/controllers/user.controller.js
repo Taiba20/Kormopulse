@@ -11,13 +11,17 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.service.js";
 import { analyzeSkillGaps as analyzeSkillGapsAI } from "../utils/groqAi.service.js";
+import { sendPasswordResetCode } from "../utils/mail.service.js";
+import crypto from "crypto";
 
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 1000 * 60 * 60 * 24 * 7,
-  domain: process.env.NODE_ENV === "production" ? "noobnarayan.in" : undefined,
+  // Optional: set COOKIE_DOMAIN (e.g. ".example.com") to share cookies across subdomains.
+  // Left unset, the cookie is bound to the API's own host, which is the safe default.
+  domain: process.env.COOKIE_DOMAIN || undefined,
 };
 
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -505,57 +509,101 @@ const userPublicProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User profile fetch successful"));
 });
 
+const RESET_CODE_TTL_MINUTES = 10;
+const RESET_MAX_ATTEMPTS = 5;
+const RESET_RESEND_COOLDOWN_MS = 60 * 1000;
+
+const hashResetCode = (userId, code) =>
+  crypto
+    .createHmac("sha256", process.env.ACCESS_TOKEN_SECRET || "kormopulse")
+    .update(`${userId}:${code}`)
+    .digest("hex");
+
+// Step 1: email a 6-digit reset code. The response is identical whether or not
+// the account exists, so the endpoint cannot be used to discover registered emails.
 const forgotPassword = asyncHandler(async (req, res) => {
-  try {
-    const { email, password, confirmPassword } = req.body;
-
-    console.log("Forgot password request received:", { 
-      email, 
-      hasPassword: !!password, 
-      hasConfirmPassword: !!confirmPassword 
-    });
-
-    if (!email || !password || !confirmPassword) {
-      throw new ApiError(400, "Email, password, and confirm password are required");
-    }
-
-    if (password !== confirmPassword) {
-      throw new ApiError(400, "Passwords do not match");
-    }
-
-    if (password.length < 6) {
-      throw new ApiError(400, "Password must be at least 6 characters long");
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!user) {
-      throw new ApiError(404, "User not found with this email");
-    }
-
-    console.log("User found, updating password...");
-
-    // Store old password for comparison
-    const oldPasswordHash = user.password;
-    
-    // Update user password directly - the pre-save hook will hash it
-    user.password = password;
-    user.markModified('password'); // Explicitly mark as modified
-    
-    const savedUser = await user.save();
-
-    console.log("Password updated successfully");
-    console.log("Old hash:", oldPasswordHash);
-    console.log("New hash:", savedUser.password);
-    console.log("Hashes are different:", oldPasswordHash !== savedUser.password);
-
-    return res.status(200).json(
-      new ApiResponse(200, {}, "Password updated successfully")
-    );
-  } catch (error) {
-    console.error("Error in forgotPassword:", error);
-    throw error;
+  const email = req.body?.email?.trim().toLowerCase();
+  if (!email) {
+    throw new ApiError(400, "Email is required");
   }
+
+  const genericResponse = new ApiResponse(
+    200,
+    {},
+    "If an account exists for this email, a reset code has been sent."
+  );
+
+  const user = await User.findOne({ email }).select("+passwordResetExpires");
+  if (!user) {
+    return res.status(200).json(genericResponse);
+  }
+
+  // Ignore repeat requests made within the cooldown window
+  const issuedAt = user.passwordResetExpires
+    ? user.passwordResetExpires.getTime() - RESET_CODE_TTL_MINUTES * 60 * 1000
+    : 0;
+  if (Date.now() - issuedAt < RESET_RESEND_COOLDOWN_MS) {
+    return res.status(200).json(genericResponse);
+  }
+
+  const code = crypto.randomInt(0, 1000000).toString().padStart(6, "0");
+  user.passwordResetCodeHash = hashResetCode(user._id, code);
+  user.passwordResetExpires = new Date(Date.now() + RESET_CODE_TTL_MINUTES * 60 * 1000);
+  user.passwordResetAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  await sendPasswordResetCode({
+    to: user.email,
+    name: user.name,
+    code,
+    expiresInMinutes: RESET_CODE_TTL_MINUTES,
+  });
+
+  return res.status(200).json(genericResponse);
+});
+
+// Step 2: verify the emailed code and set the new password.
+const resetPassword = asyncHandler(async (req, res) => {
+  const { email, code, password, confirmPassword } = req.body || {};
+
+  if (!email || !code || !password || !confirmPassword) {
+    throw new ApiError(400, "Email, code, password, and confirm password are required");
+  }
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "Passwords do not match");
+  }
+  if (password.length < 6) {
+    throw new ApiError(400, "Password must be at least 6 characters long");
+  }
+
+  const user = await User.findOne({ email: email.trim().toLowerCase() }).select(
+    "+passwordResetCodeHash +passwordResetExpires +passwordResetAttempts"
+  );
+
+  const invalid = new ApiError(400, "Invalid or expired code");
+  if (!user || !user.passwordResetCodeHash || !user.passwordResetExpires) {
+    throw invalid;
+  }
+  if (user.passwordResetExpires.getTime() < Date.now() || user.passwordResetAttempts >= RESET_MAX_ATTEMPTS) {
+    throw invalid;
+  }
+
+  const expected = Buffer.from(user.passwordResetCodeHash, "hex");
+  const provided = Buffer.from(hashResetCode(user._id, String(code).trim()), "hex");
+  if (expected.length !== provided.length || !crypto.timingSafeEqual(expected, provided)) {
+    user.passwordResetAttempts += 1;
+    await user.save({ validateBeforeSave: false });
+    throw invalid;
+  }
+
+  user.password = password; // hashed by the pre-save hook
+  user.passwordResetCodeHash = undefined;
+  user.passwordResetExpires = undefined;
+  user.passwordResetAttempts = 0;
+  user.refreshToken = undefined; // sign out existing sessions
+  await user.save();
+
+  return res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"));
 });
 
 export { 
@@ -576,5 +624,6 @@ export {
   userPublicProfile,
   analyzeSkillGap,
   changePassword,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 };

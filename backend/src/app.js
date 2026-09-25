@@ -89,7 +89,11 @@ app.use((error, req, res, next) => {
     });
   }
   
-  res.status(error.status || 500).json({
+  // ApiError uses `statusCode`; libraries such as body-parser use `status`.
+  const candidate = error.statusCode || error.status;
+  const statusCode = Number.isInteger(candidate) && candidate >= 400 && candidate <= 599 ? candidate : 500;
+
+  res.status(statusCode).json({
     message: error.message || 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
   });
