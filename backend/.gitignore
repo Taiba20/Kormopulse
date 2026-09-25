@@ -1,4 +1,3 @@
-# filepath: d:\CODE\HireLink\hirelink-backend\.gitignore
 node_modules/
 .env
 .DS_Store

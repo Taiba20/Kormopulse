@@ -1,10 +1,9 @@
 import React from "react";
-import logo from "./assets/media/logo.png";
 function Footer() {
   return (
     <div className="md:flex justify-between py-12 border-t border-neutral-300  ">
       <div className="md:w-2/5 ml-6 md:ml-20 flex flex-col gap-2 py-4 md:py-0">
-        <img src={logo} className="w-3/5 md:w-3/6" />
+        <span className="ml-3.5 text-4xl font-bold tracking-tight text-primary">Kormopulse</span>
         <div className=" flex gap-3 text-2xl ml-3.5 text-text-secondary">
           <i className="fa-brands fa-twitter cursor-pointer hover:text-primary"></i>
           <i className="fa-brands fa-instagram cursor-pointer hover:text-primary"></i>
