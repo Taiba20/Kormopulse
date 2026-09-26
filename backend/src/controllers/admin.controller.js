@@ -165,7 +165,7 @@ export const setUserSuspension = asyncHandler(async (req, res) => {
   await target.save({ validateBeforeSave: false });
 
   if (!suspended) {
-    void notify(target._id, { type: "system", title: "Account restored", message: "Your Kormopulse account is active again." });
+    void notify(target._id, { type: "system", key: "accountRestored" });
   }
 
   return res
@@ -245,8 +245,8 @@ export const setJobStatus = asyncHandler(async (req, res) => {
   if (!job.isActive) {
     void notify(job.postedBy, {
       type: "system",
-      title: "A job posting was deactivated",
-      message: `"${job.title}" was deactivated by a moderator.`,
+      key: "jobDeactivated",
+      params: { jobTitle: job.title },
       link: "/dashboard/home",
     });
   }

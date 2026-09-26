@@ -55,8 +55,8 @@ const announceMessage = async (message) => {
   }
   await notify(toId, {
     type: "message",
-    title: `New message from ${senderName}`,
-    message: String(message.content).slice(0, 200),
+    key: "newMessage",
+    params: { name: senderName, message: String(message.content).slice(0, 200) },
     link: `/messages?chat=${fromId}`,
     data: { from: String(fromId) },
   });

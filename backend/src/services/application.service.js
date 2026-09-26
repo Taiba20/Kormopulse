@@ -33,29 +33,8 @@ export const assertJobOwner = async (jobId, userId) => {
   return job;
 };
 
-const messagesFor = (status, jobTitle, companyName) =>
-  ({
-    reviewed: {
-      title: "Your application is being reviewed",
-      message: `${companyName} has started reviewing your application for ${jobTitle}.`,
-    },
-    shortlisted: {
-      title: "You have been shortlisted",
-      message: `${companyName} shortlisted you for ${jobTitle}.`,
-    },
-    interview: {
-      title: "You moved to the interview stage",
-      message: `${companyName} moved your application for ${jobTitle} to the interview stage.`,
-    },
-    hired: {
-      title: "Congratulations, you were selected!",
-      message: `${companyName} selected you for ${jobTitle}.`,
-    },
-    rejected: {
-      title: "Application update",
-      message: `${companyName} decided not to move forward with your application for ${jobTitle}.`,
-    },
-  })[status];
+// Statuses that notify the candidate (texts live in utils/i18n.js under notify.status)
+const STATUS_NOTIFICATIONS = ["reviewed", "shortlisted", "interview", "hired", "rejected"];
 
 /**
  * Single place where an application moves between pipeline stages. It keeps the
@@ -85,19 +64,18 @@ export const changeApplicationStatus = async ({ application, job, status, actorI
 
   if (!silent) {
     const [candidate, companyName] = await Promise.all([
-      User.findById(application.applicant).select("name email"),
+      User.findById(application.applicant).select("name email language"),
       getCompanyName(job),
     ]);
-    const copy = messagesFor(status, job.title, companyName);
-    if (copy && candidate) {
+    if (STATUS_NOTIFICATIONS.includes(status) && candidate) {
       void notify(candidate._id, {
         type: "application_status",
-        title: copy.title,
-        message: copy.message,
+        key: `status.${status}`,
+        params: { jobTitle: job.title, companyName },
         link: "/jobseeker/applications",
         data: { applicationId: application._id, jobId: job._id, status },
       });
-      const mailArgs = { to: candidate.email, name: candidate.name, jobTitle: job.title, companyName };
+      const mailArgs = { to: candidate.email, name: candidate.name, jobTitle: job.title, companyName, lang: candidate.language };
       if (status === "shortlisted") void sendShortlisted(mailArgs);
       if (status === "hired") void sendHired(mailArgs);
       if (status === "rejected") void sendApplicationRejected(mailArgs);

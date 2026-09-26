@@ -142,8 +142,8 @@ export const createCompanyReview = asyncHandler(async (req, res) => {
     if (owner) {
       void notify(owner._id, {
         type: "review",
-        title: "New company review",
-        message: `Your company received a ${review.rating}-star review: "${review.title}"`,
+        key: "review",
+        params: { rating: review.rating, title: review.title },
         link: `/companies/${companyId}`,
         data: { companyId },
       });

@@ -2,6 +2,7 @@ import { JobAlert } from "../models/jobAlert.model.js";
 import { Job } from "../models/job.model.js";
 import { User } from "../models/user.model.js";
 import { notify } from "../utils/notify.js";
+import { tr } from "../utils/i18n.js";
 import { sendJobAlertDigest } from "../utils/mail.service.js";
 
 const HOUR = 60 * 60 * 1000;
@@ -60,7 +61,7 @@ const toDigestJob = (job) => ({
  * Returns how many jobs were reported.
  */
 export const sendAlertDigest = async (alert, since = alert.lastCheckedAt) => {
-  const user = await User.findById(alert.user).select("name email isSuspended");
+  const user = await User.findById(alert.user).select("name email isSuspended language");
   const now = new Date();
 
   if (!user || user.isSuspended) {
@@ -81,14 +82,18 @@ export const sendAlertDigest = async (alert, since = alert.lastCheckedAt) => {
   if (!jobs.length) return 0;
 
   const label = describeAlert(alert);
-  void sendJobAlertDigest({ to: user.email, name: user.name, alertName: label, jobs: jobs.map(toDigestJob) });
+  void sendJobAlertDigest({ to: user.email, name: user.name, alertName: label, jobs: jobs.map(toDigestJob), lang: user.language });
   void notify(user._id, {
     type: "job_alert",
-    title: `${jobs.length} new job${jobs.length === 1 ? "" : "s"} for "${label}"`,
-    message: jobs
-      .slice(0, 3)
-      .map((j) => j.title)
-      .join(", "),
+    key: jobs.length === 1 ? "alertDigest_one" : "alertDigest_other",
+    params: {
+      count: jobs.length,
+      label,
+      message: jobs
+        .slice(0, 3)
+        .map((j) => j.title)
+        .join(", "),
+    },
     link: "/jobs",
     data: { alertId: alert._id },
   });
@@ -122,16 +127,16 @@ export const notifyInstantAlerts = async (job) => {
     for (const alert of alerts) {
       if (!jobMatchesAlert(populated, alert)) continue;
       if (String(alert.user) === String(populated.postedBy)) continue;
-      const user = await User.findById(alert.user).select("name email isSuspended");
+      const user = await User.findById(alert.user).select("name email isSuspended language");
       if (!user || user.isSuspended) continue;
       alert.lastSentAt = new Date();
       await alert.save();
       const label = describeAlert(alert);
-      void sendJobAlertDigest({ to: user.email, name: user.name, alertName: label, jobs: [toDigestJob(populated)] });
+      void sendJobAlertDigest({ to: user.email, name: user.name, alertName: label, jobs: [toDigestJob(populated)], lang: user.language });
       void notify(user._id, {
         type: "job_alert",
-        title: `New job for "${label}"`,
-        message: `${populated.title} at ${populated.company?.companyName || "a company"}`,
+        key: "alertInstant",
+        params: { label, jobTitle: populated.title, companyName: populated.company?.companyName || tr(user.language, "notify.aCompany") },
         link: `/jobs/${populated._id}`,
         data: { alertId: alert._id, jobId: populated._id },
       });

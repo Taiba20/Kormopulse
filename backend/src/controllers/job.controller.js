@@ -449,30 +449,32 @@ const applyForJob = asyncHandler(async (req, res) => {
 
   // Email notifications (never throw; failures are only logged)
   const companyName = await getCompanyName(job);
-  const employer = await User.findById(job.postedBy).select("name email");
+  const employer = await User.findById(job.postedBy).select("name email language");
   void sendApplicationReceived({
     to: req.user.email,
     name: req.user.name,
     jobTitle: job.title,
     companyName,
+    lang: req.user.language,
   });
   void sendNewApplicationAlert({
     to: employer?.email,
     employerName: employer?.name,
     applicantName: req.user.name,
     jobTitle: job.title,
+    lang: employer?.language,
   });
   void notify(_id, {
     type: "application_status",
-    title: "Application submitted",
-    message: `Your application for ${job.title} at ${companyName} was submitted.`,
+    key: "applicationSubmitted",
+    params: { jobTitle: job.title, companyName },
     link: "/jobseeker/applications",
     data: { applicationId: application._id, jobId: job._id },
   });
   void notify(job.postedBy, {
     type: "application_received",
-    title: "New application received",
-    message: `${req.user.name} applied for ${job.title}.`,
+    key: "applicationReceived",
+    params: { applicantName: req.user.name, jobTitle: job.title },
     link: `/pipeline/${job._id}`,
     data: { applicationId: application._id, jobId: job._id },
   });

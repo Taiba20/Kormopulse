@@ -21,8 +21,8 @@ import {
 const populate = (query) =>
   query
     .populate("job", "title location company")
-    .populate("employer", "name email")
-    .populate("candidate", "name email");
+    .populate("employer", "name email language")
+    .populate("candidate", "name email language");
 
 const loadForParticipant = async (id, userId) => {
   const interview = await populate(Interview.findById(id));
@@ -77,14 +77,14 @@ export const proposeInterview = asyncHandler(async (req, res) => {
   });
 
   const [candidate, companyName] = await Promise.all([
-    User.findById(application.applicant).select("name email"),
+    User.findById(application.applicant).select("name email language"),
     getCompanyName(job),
   ]);
 
   void notify(candidate._id, {
     type: "interview",
-    title: `Interview invitation from ${companyName}`,
-    message: `Choose a time for your ${job.title} interview.`,
+    key: "interviewInvite",
+    params: { companyName, jobTitle: job.title },
     link: "/interviews",
     data: { interviewId: interview._id, jobId: job._id },
   });
@@ -94,6 +94,7 @@ export const proposeInterview = asyncHandler(async (req, res) => {
     jobTitle: job.title,
     companyName,
     interview,
+    lang: candidate.language,
   });
 
   return res.status(201).json(new ApiResponse(201, await populate(Interview.findById(interview._id)), "Interview proposed"));
@@ -136,13 +137,13 @@ export const confirmInterview = asyncHandler(async (req, res) => {
 
   void notify(interview.employer._id, {
     type: "interview",
-    title: `${interview.candidate.name} confirmed the interview`,
-    message: `${interview.job.title}: ${new Date(slot).toUTCString()}`,
+    key: "interviewConfirmed",
+    params: { name: interview.candidate.name, jobTitle: interview.job.title, when: new Date(slot).toUTCString() },
     link: "/interviews",
     data: { interviewId: interview._id },
   });
-  void sendInterviewConfirmed({ ...common, to: interview.candidate.email, name: interview.candidate.name, otherName: interview.employer.name });
-  void sendInterviewConfirmed({ ...common, to: interview.employer.email, name: interview.employer.name, otherName: interview.candidate.name });
+  void sendInterviewConfirmed({ ...common, to: interview.candidate.email, name: interview.candidate.name, otherName: interview.employer.name, lang: interview.candidate.language });
+  void sendInterviewConfirmed({ ...common, to: interview.employer.email, name: interview.employer.name, otherName: interview.candidate.name, lang: interview.employer.language });
 
   return res.status(200).json(new ApiResponse(200, interview, "Interview confirmed"));
 });
@@ -159,8 +160,8 @@ export const declineInterview = asyncHandler(async (req, res) => {
 
   void notify(interview.employer._id, {
     type: "interview",
-    title: `${interview.candidate.name} can't make the proposed times`,
-    message: req.body.reason || "Propose new times from the interviews page.",
+    key: "interviewDeclined",
+    params: { name: interview.candidate.name, message: req.body.reason },
     link: "/interviews",
     data: { interviewId: interview._id },
   });
@@ -170,6 +171,7 @@ export const declineInterview = asyncHandler(async (req, res) => {
     candidateName: interview.candidate.name,
     jobTitle: interview.job.title,
     reason: req.body.reason,
+    lang: interview.employer.language,
   });
 
   return res.status(200).json(new ApiResponse(200, interview, "Interview declined"));
@@ -192,8 +194,8 @@ export const cancelInterview = asyncHandler(async (req, res) => {
 
   void notify(interview.candidate._id, {
     type: "interview",
-    title: "Interview cancelled",
-    message: `${companyName} cancelled the ${interview.job.title} interview.`,
+    key: "interviewCancelled",
+    params: { companyName, jobTitle: interview.job.title },
     link: "/interviews",
     data: { interviewId: interview._id },
   });
@@ -205,6 +207,7 @@ export const cancelInterview = asyncHandler(async (req, res) => {
     interview: wasConfirmed ? interview : { ...interview.toObject(), selectedSlot: undefined },
     organizer,
     attendee,
+    lang: interview.candidate.language,
   });
 
   return res.status(200).json(new ApiResponse(200, interview, "Interview cancelled"));
