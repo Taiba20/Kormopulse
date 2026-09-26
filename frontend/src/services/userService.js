@@ -16,7 +16,8 @@ export const forgotPassword = (data) => apiCall.post('/users/forgot-password', d
 export const resetPassword = (data) => apiCall.post('/users/reset-password', data);
 export const verifyEmail = (code) => apiCall.post('/users/verify-email', { code });
 export const resendVerification = () => apiCall.post('/users/resend-verification');
-export const googleLogin = (credential, role) => apiCall.post('/users/google', { credential, role });
+export const googleLogin = (credential, role, language) => apiCall.post('/users/google', { credential, role, language });
+export const updateLanguage = (language) => apiCall.patch('/users/language', { language });
 
 // Enhanced userService object with all methods
 export const userService = {
@@ -45,6 +46,11 @@ export const userService = {
   checkApplicationStatus,
   forgotPassword: forgotPassword,
   resetPassword: resetPassword,
+  // Return the raw axios response, like the standalone exports above
+  verifyEmail,
+  resendVerification,
+  googleLogin,
+  updateLanguage,
 };
 
 async function login(userData) {

@@ -6,6 +6,7 @@ import { store } from './store/store';
 import './index.css'
 import App from './App.jsx'
 import { BrowserRouter } from "react-router-dom";
+import { I18nProvider } from './i18n/I18nContext';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -13,9 +14,11 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 // script as soon as it mounts, which is pointless (and noisy in the console) without one.
 const Root = (
   <Provider store={store}>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <I18nProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </I18nProvider>
   </Provider>
 );
 

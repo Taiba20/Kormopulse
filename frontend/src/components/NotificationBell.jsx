@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { notificationService } from "../services/notificationService";
 import { getSocket } from "../services/socket";
+import { useI18n } from "../i18n/I18nContext";
 
 const ICONS = {
   application_received: "📥",
@@ -13,19 +14,20 @@ const ICONS = {
   system: "ℹ️",
 };
 
-const timeAgo = (date) => {
+const timeAgo = (date, t, formatDate, formatNumber) => {
   const diffMs = Date.now() - new Date(date).getTime();
   const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t("time.justNow");
+  if (minutes < 60) return t("time.minutesAgo", { n: formatNumber(minutes) });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("time.hoursAgo", { n: formatNumber(hours) });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(date).toLocaleDateString();
+  if (days < 7) return t("time.daysAgo", { n: formatNumber(days) });
+  return formatDate(date);
 };
 
 function NotificationBell({ className = "" }) {
+  const { t, formatDate, formatNumber } = useI18n();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -101,7 +103,7 @@ function NotificationBell({ className = "" }) {
       <button
         type="button"
         onClick={toggleOpen}
-        aria-label="Notifications"
+        aria-label={t("nav.notifications")}
         className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 hover:scale-105 ${className}`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,7 +112,7 @@ function NotificationBell({ className = "" }) {
         </svg>
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadCount > 9 ? `${formatNumber(9)}+` : formatNumber(unreadCount)}
           </span>
         )}
       </button>
@@ -118,18 +120,18 @@ function NotificationBell({ className = "" }) {
       {open && (
         <div className="absolute right-0 mt-2 w-80 max-w-[90vw] rounded-md border border-neutral-200 bg-background shadow-lg z-50">
           <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-2.5">
-            <span className="font-semibold text-text-primary text-sm">Notifications</span>
+            <span className="font-semibold text-text-primary text-sm">{t("nav.notifications")}</span>
             {unreadCount > 0 && (
               <button onClick={markAllRead} className="text-xs text-primary hover:text-primary-dark">
-                Mark all read
+                {t("notifications.markAllRead")}
               </button>
             )}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <p className="py-8 text-center text-sm text-text-secondary">Loading...</p>
+              <p className="py-8 text-center text-sm text-text-secondary">{t("common.loading")}</p>
             ) : items.length === 0 ? (
-              <p className="py-8 text-center text-sm text-text-secondary">No notifications yet.</p>
+              <p className="py-8 text-center text-sm text-text-secondary">{t("notifications.empty")}</p>
             ) : (
               items.map((n) => (
                 <button
@@ -143,7 +145,7 @@ function NotificationBell({ className = "" }) {
                   <span className="flex-1 min-w-0">
                     <span className={`block text-sm ${!n.isRead ? "font-semibold text-text-primary" : "text-text-primary"}`}>{n.title}</span>
                     {n.message && <span className="block text-xs text-text-secondary line-clamp-2 mt-0.5">{n.message}</span>}
-                    <span className="block text-[11px] text-text-muted mt-1">{timeAgo(n.createdAt)}</span>
+                    <span className="block text-[11px] text-text-muted mt-1">{timeAgo(n.createdAt, t, formatDate, formatNumber)}</span>
                   </span>
                   {!n.isRead && <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
                 </button>

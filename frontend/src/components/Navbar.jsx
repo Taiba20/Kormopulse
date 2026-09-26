@@ -6,8 +6,11 @@ import { userService } from '../services/userService';
 import { closeSocket } from '../services/socket';
 import ThemeToggle from './ThemeToggle';
 import NotificationBell from './NotificationBell';
+import LanguageToggle from './LanguageToggle';
+import { useI18n } from '../i18n/I18nContext';
 
 const Navbar = () => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const { userData } = useSelector((store) => store.auth);
@@ -79,29 +82,25 @@ const Navbar = () => {
                     onClick={handleLogoClick}
                     className="text-text-inverse hover:text-text-inverse hover:bg-white/20 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105"
                   >
-                    Home
+                    {t('nav.home')}
                   </button>
                     <a
                       href="/jobs"
                       className="text-text-inverse hover:text-text-inverse hover:bg-white/20 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105"
                     >
-                      Find Jobs
+                      {t('nav.findJobs')}
                     </a>
                     <a
                       href="/companies"
                       className="text-text-inverse hover:text-text-inverse hover:bg-white/20 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105"
                     >
-                      Companies
+                      {t('nav.companies')}
                     </a>
                   </>
                 )}
-                {userData && (
-                  <>
-                    <NotificationBell className="text-text-inverse hover:bg-white/20" />
-                    <ThemeToggle className="text-text-inverse hover:bg-white/20" />
-                  </>
-                )}
-                {!userData && <ThemeToggle className="text-text-inverse hover:bg-white/20" />}
+                {userData && <NotificationBell className="text-text-inverse hover:bg-white/20" />}
+                <LanguageToggle className="text-text-inverse" />
+                <ThemeToggle className="text-text-inverse hover:bg-white/20" />
                 {userData ? (
                   <div className="relative">
                     <button
@@ -133,20 +132,20 @@ const Navbar = () => {
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowProfileDropdown(false)}
                         >
-                          Dashboard
+                          {t('nav.dashboard')}
                         </Link>
                         <Link
                           to="/profile"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowProfileDropdown(false)}
                         >
-                          Profile
+                          {t('nav.profile')}
                         </Link>
                         <button
                           onClick={() => {handleLogout(); setShowProfileDropdown(false);}}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
-                          Logout
+                          {t('nav.logout')}
                         </button>
                       </div>
                     )}
@@ -157,13 +156,13 @@ const Navbar = () => {
                       to="/login"
                       className="text-text-inverse hover:text-text-inverse hover:bg-white/20 px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105"
                     >
-                      Login
+                      {t('nav.login')}
                     </Link>
                     <Link
                       to="/signup"
                       className="bg-text-inverse text-primary hover:bg-neutral-100 hover:text-primary-dark px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 shadow-md"
                     >
-                      Sign Up
+                      {t('nav.signUp')}
                     </Link>
                   </>
                 )}
@@ -208,12 +207,13 @@ const Navbar = () => {
             onClick={handleLogoClick}
             className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105 w-full text-left"
           >
-            Home
+            {t('nav.home')}
           </button>
           <div className="flex items-center gap-2 px-3 py-1">
             {userData && <NotificationBell className="text-text-inverse hover:bg-white/20" />}
+            <LanguageToggle className="text-text-inverse" />
             <ThemeToggle className="text-text-inverse hover:bg-white/20" />
-            <span className="text-sm text-text-inverse/80">Toggle theme</span>
+            <span className="text-sm text-text-inverse/80">{t('theme.toggle')}</span>
           </div>
           {userData && (
             <>
@@ -221,13 +221,13 @@ const Navbar = () => {
                 href="/jobs"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
-                Find Jobs
+                {t('nav.findJobs')}
               </a>
               <a
                 href="/companies"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
-                Companies
+                {t('nav.companies')}
               </a>
             </>
           )}
@@ -237,19 +237,19 @@ const Navbar = () => {
                 to={dashboardLink}
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
-                Dashboard
+                {t('nav.dashboard')}
               </Link>
               <Link
                 to="/profile"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
-                Profile
+                {t('nav.profile')}
               </Link>
               <button
                 onClick={handleLogout}
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105 w-full text-left"
               >
-                Logout
+                {t('nav.logout')}
               </button>
             </>
           ) : (
@@ -258,13 +258,13 @@ const Navbar = () => {
                 to="/login"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
-                Login
+                {t('nav.login')}
               </Link>
               <Link
                 to="/signup"
                 className="bg-text-inverse text-primary hover:bg-neutral-100 hover:text-primary-dark block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105 shadow-md"
               >
-                Sign Up
+                {t('nav.signUp')}
               </Link>
             </>
           )}

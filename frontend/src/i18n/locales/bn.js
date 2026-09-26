@@ -1,0 +1,18 @@
+import common from "./bn/common.js";
+import home from "./bn/home.js";
+import auth from "./bn/auth.js";
+import jobs from "./bn/jobs.js";
+import seeker from "./bn/seeker.js";
+import employer from "./bn/employer.js";
+import applicants from "./bn/applicants.js";
+import analytics from "./bn/analytics.js";
+import profile from "./bn/profile.js";
+import workflow from "./bn/workflow.js";
+import tools from "./bn/tools.js";
+import discover from "./bn/discover.js";
+import admin from "./bn/admin.js";
+import onboarding from "./bn/onboarding.js";
+import posting from "./bn/posting.js";
+import jobRoles from "./bn/jobRoles.js";
+
+export default { ...common, ...home, ...auth, ...jobs, ...seeker, ...employer, ...applicants, ...analytics, ...profile, ...workflow, ...tools, ...discover, ...admin, ...onboarding, ...posting, ...jobRoles };

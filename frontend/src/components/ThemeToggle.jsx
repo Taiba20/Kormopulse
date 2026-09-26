@@ -1,17 +1,20 @@
 import React from "react";
 import useTheme from "../hooks/useTheme";
+import { useI18n } from "../i18n/I18nContext";
 
 /** Sun/moon toggle button. Pass `className` to adapt it to light or dark navbar backgrounds. */
 function ThemeToggle({ className = "" }) {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useI18n();
   const isDark = theme === "dark";
+  const label = isDark ? t("theme.toLight") : t("theme.toDark");
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={label}
+      title={label}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 hover:scale-105 ${className}`}
     >
       {isDark ? (

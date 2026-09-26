@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import CompanyDashboard from "./Pages/CompanyDashboard";
 import { setLoadingFalse } from "./store/authSlice";
 import EmailVerificationBanner from "./components/EmailVerificationBanner";
+import LanguageToggle from "./components/LanguageToggle";
 
 function App() {
   const { loading } = useSelector((store) => store.auth);
@@ -43,6 +44,12 @@ function App() {
   return (
     <>
       <div>
+        {hideOnRoutes.includes(location.pathname) && (
+          // These pages have no navbar, so the language switch floats in the corner instead.
+          <div className="fixed top-3 right-4 z-50">
+            <LanguageToggle tone="default" className="shadow-sm" />
+          </div>
+        )}
         {!(
           hideOnRoutes.includes(location.pathname)
         ) && (

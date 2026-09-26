@@ -21,10 +21,10 @@ async function applyResume(profile, overwrite = false) {
   return apiCall("post", "/ai/resume/apply", { profile, overwrite });
 }
 
-async function generateCoverLetter(jobId, tone = "professional") {
-  return apiCall("post", "/ai/cover-letter", { jobId, tone });
+async function generateCoverLetter(jobId, tone = "professional", lang = "en") {
+  return apiCall("post", "/ai/cover-letter", { jobId, tone, lang });
 }
 
-async function getInterviewPrep(jobId) {
-  return apiCall("get", `/ai/interview-prep/${jobId}`);
+async function getInterviewPrep(jobId, lang = "en") {
+  return apiCall("get", `/ai/interview-prep/${jobId}?lang=${lang}`);
 }
