@@ -132,7 +132,14 @@ function Companies() {
                       <div className="text-sm text-neutral-500">
                         {company.jobCount || 0} active jobs
                       </div>
-                      
+
+                      {company.rating?.count > 0 && (
+                        <div className="text-sm text-warning flex items-center gap-1">
+                          <i className="fas fa-star"></i>
+                          {company.rating.average} <span className="text-neutral-400">({company.rating.count})</span>
+                        </div>
+                      )}
+
                       {company.companySize && (
                         <div className="text-sm text-neutral-500">
                           {company.companySize.from}-{company.companySize.to} employees
@@ -153,6 +160,16 @@ function Companies() {
                         Website
                       </div>
                     )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/companies/${company._id}`);
+                      }}
+                      className="text-sm text-primary hover:underline mt-2"
+                    >
+                      View profile &amp; reviews
+                    </button>
                   </div>
                 </div>
                 

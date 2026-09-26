@@ -20,6 +20,12 @@ import Messages from "../Pages/Messages";
 import SavedJobs from "../Pages/SavedJobs";
 import MyApplications from "../Pages/MyApplications";
 import ForgotPassword from "../Pages/ForgotPassword";
+import Pipeline from "../Pages/Pipeline";
+import Interviews from "../Pages/Interviews";
+import JobAlerts from "../Pages/JobAlerts";
+import SalaryInsights from "../Pages/SalaryInsights";
+import CompanyProfilePublic from "../Pages/CompanyProfilePublic";
+import AdminDashboard from "../Pages/AdminDashboard";
 
 
 
@@ -92,6 +98,24 @@ function AllRoutes() {
           </PrivateRoutes>
         }
       />
+
+      {/* Employer pipeline board */}
+      <Route path="/pipeline/:jobId" element={<PrivateRoutes><Pipeline /></PrivateRoutes>} />
+
+      {/* Interviews (both roles) */}
+      <Route path="/interviews" element={<PrivateRoutes><Interviews /></PrivateRoutes>} />
+
+      {/* Job seeker alerts */}
+      <Route path="/alerts" element={<PrivateRoutes><JobAlerts /></PrivateRoutes>} />
+
+      {/* Salary insights (public) */}
+      <Route path="/salary-insights" element={<SalaryInsights />} />
+
+      {/* Public company profile with reviews */}
+      <Route path="/companies/:id" element={<CompanyProfilePublic />} />
+
+      {/* Admin */}
+      <Route path="/admin/*" element={<PrivateRoutes><AdminDashboard /></PrivateRoutes>} />
 
     </Routes>
   );

@@ -42,6 +42,24 @@ function JobSeekerSidebar() {
       current: location.pathname === '/messages'
     },
     {
+      name: 'Interviews',
+      href: '/interviews',
+      icon: 'fas fa-calendar-check',
+      current: location.pathname === '/interviews'
+    },
+    {
+      name: 'Job Alerts',
+      href: '/alerts',
+      icon: 'fas fa-bell',
+      current: location.pathname === '/alerts'
+    },
+    {
+      name: 'Salary Insights',
+      href: '/salary-insights',
+      icon: 'fas fa-chart-line',
+      current: location.pathname === '/salary-insights'
+    },
+    {
       name: 'Profile',
       href: '/profile',
       icon: 'fas fa-user',

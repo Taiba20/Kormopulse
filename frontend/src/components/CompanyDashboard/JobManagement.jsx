@@ -85,14 +85,23 @@ function JobManagement() {
     <div className="p-6 pt-20">
       {/* Job Header */}
       <div className="mb-6">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="mb-4 flex items-center text-blue-600 hover:text-blue-800"
-        >
-          <i className="fas fa-arrow-left mr-2"></i>
-          Back to Dashboard
-        </button>
-        
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <i className="fas fa-arrow-left mr-2"></i>
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => navigate(`/pipeline/${jobId}`)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark"
+          >
+            <i className="fa-solid fa-table-columns"></i>
+            Open as pipeline board
+          </button>
+        </div>
+
         {job && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h1>

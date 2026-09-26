@@ -1,345 +1,286 @@
-import React, { useState, useEffect } from 'react';
-import { messageService } from '../services/messageService';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { messageService } from "../services/messageService";
+import { getSocket } from "../services/socket";
+
+const AVATAR_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
+
+const formatTime = (d) => new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const formatListTime = (d) => {
+  const date = new Date(d);
+  const diffHours = (Date.now() - date) / 3600000;
+  if (diffHours < 24) return formatTime(d);
+  if (diffHours < 168) return date.toLocaleDateString([], { weekday: "short" });
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+};
+
+function ConversationRow({ conv, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-neutral-100 hover:bg-neutral-50 ${active ? "bg-primary/5" : ""}`}
+    >
+      <div className="relative flex-shrink-0">
+        <img src={AVATAR_FALLBACK} alt="" className="h-11 w-11 rounded-full object-cover" />
+        {conv.online && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-background" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-baseline gap-2">
+          <p className={`text-sm truncate ${conv.unread > 0 ? "font-semibold text-text-primary" : "font-medium text-text-primary"}`}>{conv.user.name}</p>
+          <span className="text-[11px] text-text-muted flex-shrink-0">{formatListTime(conv.lastMessage.createdAt)}</span>
+        </div>
+        <div className="flex justify-between items-center gap-2">
+          <p className="text-xs text-text-secondary truncate">{conv.lastMessage.content}</p>
+          {conv.unread > 0 && (
+            <span className="flex-shrink-0 bg-primary text-white text-[10px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+              {conv.unread}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
 
 function Messages() {
   const { userData } = useSelector((store) => store.auth);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({});
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [responseTexts, setResponseTexts] = useState({});
-  const [respondingTo, setRespondingTo] = useState(null);
-  const [filter, setFilter] = useState({
-    type: 'all',
-    isRead: 'all',
-    page: 1,
-    limit: 20
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeUserId = searchParams.get("chat");
 
-  const fetchMessages = async () => {
+  const [conversations, setConversations] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [thread, setThread] = useState(null); // { user, messages }
+  const [loadingThread, setLoadingThread] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [showListOnMobile, setShowListOnMobile] = useState(!activeUserId);
+  const bottomRef = useRef(null);
+  const typingTimeout = useRef(null);
+
+  // Both the socket ("message:new"/"message:sent") and the optimistic update in send() can
+  // deliver the same message; de-duping by _id is what keeps it from appearing twice.
+  const appendMessage = (message) => {
+    setThread((prev) => {
+      if (!prev) return prev;
+      if (prev.messages.some((m) => m._id === message._id)) return prev;
+      return { ...prev, messages: [...prev.messages, message] };
+    });
+  };
+
+  const loadConversations = async () => {
     try {
-      setLoading(true);
-      console.log('Fetching messages with filter:', filter);
-      const response = await messageService.getMyMessages(filter);
-      console.log('Messages response:', response);
-      setMessages(response.data?.messages || response.messages || []);
-      setPagination(response.data?.pagination || response.pagination || {});
+      const data = await messageService.getConversations();
+      setConversations(data.conversations || []);
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      setMessages([]);
-      setPagination({});
+      console.error("Failed to load conversations", error);
     } finally {
-      setLoading(false);
+      setLoadingList(false);
     }
   };
 
-  const fetchUnreadCount = async () => {
+  const loadThread = async (userId) => {
+    setLoadingThread(true);
+    setOtherTyping(false);
     try {
-      const response = await messageService.getUnreadMessageCount();
-      setUnreadCount(response.data?.unreadCount || response.unreadCount || 0);
+      const data = await messageService.getConversation(userId);
+      setThread(data);
+      setConversations((prev) => prev.map((c) => (c.user._id === userId ? { ...c, unread: 0 } : c)));
     } catch (error) {
-      console.error('Error fetching unread count:', error);
-      setUnreadCount(0);
+      console.error("Failed to load conversation", error);
+      setThread(null);
+    } finally {
+      setLoadingThread(false);
     }
   };
 
   useEffect(() => {
-    fetchMessages();
-    fetchUnreadCount();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+    loadConversations();
+  }, []);
 
-  const markAsRead = async (messageId) => {
-    try {
-      await messageService.markMessageAsRead(messageId);
-      // Update the message in the list
-      setMessages(messages.map(msg => 
-        msg._id === messageId ? { ...msg, isRead: true, readAt: new Date() } : msg
-      ));
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      await messageService.markAllMessagesAsRead();
-      setMessages(messages.map(msg => ({ ...msg, isRead: true, readAt: new Date() })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all messages as read:', error);
-    }
-  };
-
-  const getMessageTypeIcon = (type) => {
-    switch (type) {
-      case 'chat_request':
-        return '💬';
-      case 'application_update':
-        return '📋';
-      default:
-        return '📧';
-    }
-  };
-
-  const getMessageTypeColor = (type) => {
-    switch (type) {
-      case 'chat_request':
-        return 'bg-primary/10 text-primary';
-      case 'application_update':
-        return 'bg-success/10 text-success';
-      default:
-        return 'bg-neutral-100 text-text-secondary';
-    }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 168) { // 7 days
-      return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  useEffect(() => {
+    if (activeUserId) {
+      loadThread(activeUserId);
+      setShowListOnMobile(false);
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      setThread(null);
     }
+  }, [activeUserId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    const onNewMessage = (message) => {
+      const fromId = message.from?._id || message.from;
+      if (String(fromId) === String(activeUserId)) {
+        appendMessage(message);
+        setOtherTyping(false);
+        messageService.markMessageAsRead(message._id).catch(() => {});
+      }
+      loadConversations();
+    };
+    const onSent = (message) => {
+      // The server echoes every sent message back to the sender's own socket (so a second tab
+      // stays in sync); on the tab that actually sent it, send() below already appended it
+      // optimistically, so appendMessage's de-dup by _id is what stops it being shown twice.
+      const toId = message.to?._id || message.to;
+      if (String(toId) === String(activeUserId)) {
+        appendMessage(message);
+      }
+      loadConversations();
+    };
+    const onTyping = ({ from, isTyping }) => {
+      if (String(from) === String(activeUserId)) setOtherTyping(isTyping);
+    };
+
+    socket.on("message:new", onNewMessage);
+    socket.on("message:sent", onSent);
+    socket.on("typing", onTyping);
+    return () => {
+      socket.off("message:new", onNewMessage);
+      socket.off("message:sent", onSent);
+      socket.off("typing", onTyping);
+    };
+  }, [activeUserId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [thread?.messages?.length, otherTyping]);
+
+  const openConversation = (userId) => {
+    setSearchParams({ chat: userId });
   };
 
-  const handlePageChange = (newPage) => {
-    setFilter(prev => ({ ...prev, page: newPage }));
+  const sendTyping = (isTyping) => {
+    if (!activeUserId) return;
+    getSocket().emit("typing", { to: activeUserId, isTyping });
   };
 
-  const sendResponse = async (messageId) => {
-    const responseText = responseTexts[messageId];
-    if (!responseText || !responseText.trim()) {
-      alert('Please enter a response message.');
-      return;
-    }
+  const handleDraftChange = (value) => {
+    setDraft(value);
+    sendTyping(true);
+    clearTimeout(typingTimeout.current);
+    typingTimeout.current = setTimeout(() => sendTyping(false), 1500);
+  };
 
+  const send = async (e) => {
+    e.preventDefault();
+    const content = draft.trim();
+    if (!content || !activeUserId) return;
+    setSending(true);
+    setDraft("");
+    clearTimeout(typingTimeout.current);
+    sendTyping(false);
     try {
-      await messageService.sendMessageResponse(messageId, {
-        content: responseText,
-        subject: 'Re: Message Acknowledgment'
-      });
-      
-      alert('Response sent successfully!');
-      setResponseTexts(prev => ({ ...prev, [messageId]: '' }));
-      setRespondingTo(null);
-      
-      // Optionally refresh messages to show updated state
-      fetchMessages();
+      const message = await messageService.sendChat(activeUserId, content);
+      appendMessage(message);
+      loadConversations();
     } catch (error) {
-      console.error('Error sending response:', error);
-      alert('Failed to send response. Please try again.');
+      alert(error.response?.data?.message || "Could not send message.");
+      setDraft(content);
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleResponseTextChange = (messageId, text) => {
-    setResponseTexts(prev => ({ ...prev, [messageId]: text }));
-  };
+  const isMine = (m) => (m.from?._id || m.from) !== activeUserId;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Messages</h1>
-          {unreadCount > 0 && (
-            <p className="text-text-secondary mt-1">
-              You have {unreadCount} unread message{unreadCount > 1 ? 's' : ''}
-            </p>
-          )}
+    <div className="mt-16 h-[calc(100vh-4rem)] bg-background-secondary flex">
+      {/* Conversation list */}
+      <div className={`w-full md:w-80 flex-shrink-0 border-r border-neutral-200 bg-background overflow-y-auto ${showListOnMobile ? "block" : "hidden md:block"}`}>
+        <div className="px-4 py-3.5 border-b border-neutral-200">
+          <h1 className="font-semibold text-text-primary">Messages</h1>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllAsRead}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-          >
-            Mark All as Read
-          </button>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 mb-6">
-        <div className="flex flex-wrap gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Message Type</label>
-            <select
-              value={filter.type}
-              onChange={(e) => setFilter(prev => ({ ...prev, type: e.target.value, page: 1 }))}
-              className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="all">All Messages</option>
-              <option value="chat_request">Chat Requests</option>
-              <option value="application_update">Application Updates</option>
-              <option value="general">General</option>
-            </select>
+        {loadingList ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
-            <select
-              value={filter.isRead}
-              onChange={(e) => setFilter(prev => ({ ...prev, isRead: e.target.value, page: 1 }))}
-              className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="false">Unread</option>
-              <option value="true">Read</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Messages List */}
-      <div className="space-y-4">
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-text-secondary">Loading messages...</p>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-8 text-center">
-            <div className="text-4xl mb-4">📭</div>
-            <h3 className="text-lg font-medium text-text-primary mb-2">No messages found</h3>
-            <p className="text-text-secondary">
-              {filter.type !== 'all' || filter.isRead !== 'all' 
-                ? 'Try adjusting your filters to see more messages.' 
-                : 'You don\'t have any messages yet.'}
-            </p>
-          </div>
+        ) : conversations.length === 0 ? (
+          <p className="text-sm text-text-secondary text-center py-10 px-4">
+            No conversations yet. {userData?.role === "jobSeeker" ? "Apply to jobs to connect with employers." : "Message a candidate from your pipeline."}
+          </p>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message._id}
-              className={`bg-white rounded-lg shadow-sm border transition-all duration-200 hover:shadow-md ${
-                message.isRead ? 'border-neutral-200' : 'border-primary/30 bg-primary/5'
-              }`}
-            >
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="text-2xl">{getMessageTypeIcon(message.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className={`font-medium ${message.isRead ? 'text-text-primary' : 'text-primary font-semibold'}`}>
-                          {message.subject}
-                        </h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMessageTypeColor(message.type)}`}>
-                          {message.type.replace('_', ' ')}
-                        </span>
-                        {!message.isRead && (
-                          <span className="bg-primary text-white px-2 py-1 rounded-full text-xs font-medium">
-                            New
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-text-secondary mb-2">
-                        From: {message.from?.name || 'Unknown'} ({message.from?.email})
-                      </p>
-                      {message.relatedJob && (
-                        <p className="text-sm text-accent mb-2">
-                          <i className="fa-solid fa-briefcase mr-1"></i>
-                          Related to: {message.relatedJob.title}
-                        </p>
-                      )}
-                      <div className="text-text-primary text-sm leading-relaxed">
-                        {message.content.split('\n').map((line, index) => (
-                          <React.Fragment key={index}>
-                            {line}
-                            {index < message.content.split('\n').length - 1 && <br />}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end space-y-2 ml-4">
-                    <span className="text-xs text-text-muted">
-                      {formatDate(message.createdAt)}
-                    </span>
-                    {!message.isRead && (
-                      <button
-                        onClick={() => markAsRead(message._id)}
-                        className="text-xs text-primary hover:text-primary-dark transition-colors"
-                      >
-                        Mark as Read
-                      </button>
-                    )}
-                    {userData?.role === 'jobSeeker' && message.type === 'chat_request' && (
-                      <button
-                        onClick={() => setRespondingTo(respondingTo === message._id ? null : message._id)}
-                        className="text-xs bg-primary text-white px-2 py-1 rounded hover:bg-primary-dark transition-colors"
-                      >
-                        {respondingTo === message._id ? 'Cancel' : 'Respond'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Response form for job seekers */}
-                {userData?.role === 'jobSeeker' && respondingTo === message._id && (
-                  <div className="mt-4 p-3 border-t border-neutral-200">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs font-medium text-text-secondary">
-                        Send a response to acknowledge this message:
-                      </label>
-                      <textarea
-                        value={responseTexts[message._id] || ''}
-                        onChange={(e) => handleResponseTextChange(message._id, e.target.value)}
-                        placeholder="Type your response here..."
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm resize-none focus:outline-none focus:border-primary"
-                        rows="3"
-                      />
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => setRespondingTo(null)}
-                          className="px-3 py-1 text-xs border border-neutral-300 rounded text-neutral-600 hover:bg-neutral-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => sendResponse(message._id)}
-                          className="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary-dark"
-                        >
-                          Send Response
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+          conversations.map((conv) => (
+            <ConversationRow
+              key={conv.user._id}
+              conv={conv}
+              active={conv.user._id === activeUserId}
+              onClick={() => {
+                openConversation(conv.user._id);
+                setShowListOnMobile(false);
+              }}
+            />
           ))
         )}
       </div>
 
-      {/* Pagination */}
-      {pagination.total > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-8">
-          <button
-            onClick={() => handlePageChange(pagination.current - 1)}
-            disabled={!pagination.hasPrev}
-            className="px-3 py-2 border border-neutral-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
-          >
-            Previous
-          </button>
-          <span className="px-3 py-2 text-sm text-text-secondary">
-            Page {pagination.current} of {pagination.total}
-          </span>
-          <button
-            onClick={() => handlePageChange(pagination.current + 1)}
-            disabled={!pagination.hasNext}
-            className="px-3 py-2 border border-neutral-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      {/* Thread */}
+      <div className={`flex-1 flex flex-col ${showListOnMobile ? "hidden md:flex" : "flex"}`}>
+        {!activeUserId ? (
+          <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">
+            Select a conversation to start chatting.
+          </div>
+        ) : loadingThread ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : !thread ? (
+          <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">Conversation not found.</div>
+        ) : (
+          <>
+            <div className="px-4 py-3 border-b border-neutral-200 bg-background flex items-center gap-3">
+              <button onClick={() => setShowListOnMobile(true)} className="md:hidden text-text-secondary">
+                <i className="fa-solid fa-arrow-left"></i>
+              </button>
+              <img src={AVATAR_FALLBACK} alt="" className="h-9 w-9 rounded-full" />
+              <div>
+                <p className="font-medium text-text-primary text-sm">{thread.user.name}</p>
+                <p className="text-xs text-text-secondary">{thread.user.online ? "Online" : "Offline"}</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2">
+              {thread.messages.map((m) => (
+                <div key={m._id} className={`flex ${isMine(m) ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words ${
+                      isMine(m) ? "bg-primary text-white rounded-br-sm" : "bg-neutral-100 text-text-primary rounded-bl-sm"
+                    }`}
+                  >
+                    {m.content}
+                    <div className={`text-[10px] mt-1 ${isMine(m) ? "text-white/70" : "text-text-muted"}`}>{formatTime(m.createdAt)}</div>
+                  </div>
+                </div>
+              ))}
+              {otherTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-neutral-100 rounded-2xl rounded-bl-sm px-3.5 py-2 text-xs text-text-secondary italic">typing...</div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            <form onSubmit={send} className="border-t border-neutral-200 bg-background px-4 py-3 flex gap-2">
+              <input
+                value={draft}
+                onChange={(e) => handleDraftChange(e.target.value)}
+                placeholder="Type a message..."
+                maxLength={2000}
+                className="flex-1 border border-neutral-300 rounded-full px-4 py-2 text-sm bg-background text-text-primary"
+              />
+              <button
+                type="submit"
+                disabled={sending || !draft.trim()}
+                className="bg-primary text-white rounded-full h-10 w-10 flex items-center justify-center hover:bg-primary-dark disabled:opacity-50 flex-shrink-0"
+              >
+                <i className="fa-solid fa-paper-plane text-sm"></i>
+              </button>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }

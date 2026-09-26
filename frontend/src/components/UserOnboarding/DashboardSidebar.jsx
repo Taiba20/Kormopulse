@@ -4,6 +4,8 @@ import {
   ShieldCheckIcon,
   ChatBubbleBottomCenterIcon,
   UserCircleIcon,
+  CalendarDaysIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 import { NavLink, Link, useNavigate } from "react-router-dom";
@@ -33,6 +35,16 @@ const sidebarLinks = [
     name: "Messages",
     href: "/dashboard/messages",
     icon: ChatBubbleBottomCenterIcon,
+  },
+  {
+    name: "Interviews",
+    href: "/dashboard/interviews",
+    icon: CalendarDaysIcon,
+  },
+  {
+    name: "Analytics",
+    href: "/dashboard/analytics",
+    icon: ChartBarIcon,
   },
   {
     name: "Profile",

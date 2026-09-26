@@ -322,12 +322,20 @@ function Dashboard() {
                     {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      color="black"
-                      onClick={() => redirectToDetail(job._id)}
-                    >
-                      Manage
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        color="black"
+                        onClick={() => redirectToDetail(job._id)}
+                      >
+                        Manage
+                      </Button>
+                      <Button
+                        color="fuchsia"
+                        onClick={() => navigate(`/pipeline/${job._id}`)}
+                      >
+                        Pipeline
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
