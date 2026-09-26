@@ -293,6 +293,7 @@ function AboutForm({ userData }) {
               value={formData.primaryRole}
               onChange={handleInputChange}
               options={roleOptions}
+              placeholder="Select your primary role"
               isRequired={true}
               optgroup={true}
               error={errors.primaryRole}
@@ -306,6 +307,7 @@ function AboutForm({ userData }) {
               value={formData.yearsOfExperience}
               onChange={handleInputChange}
               options={experienceOptions}
+              placeholder="Select years of experience"
               isRequired={true}
               error={errors.yearsOfExperience}
             />

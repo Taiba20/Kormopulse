@@ -507,6 +507,7 @@ function JobPosting() {
                 name="category"
                 value={formData.category}
                 options={roleOptions}
+                placeholder="Select a primary role"
                 isRequired={true}
                 optgroup={true}
                 onChange={handleInputChange}
@@ -524,6 +525,7 @@ function JobPosting() {
                   option.min === formData.experience.min && option.max === formData.experience.max
                 )?.value || ""}
                 options={experienceOptions}
+                placeholder="Select years of experience"
                 isRequired={true}
                 onChange={handleInputChange}
                 error={errors.experience}
