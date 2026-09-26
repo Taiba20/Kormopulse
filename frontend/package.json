@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "test": "node --test \"tests/**/*.test.js\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
