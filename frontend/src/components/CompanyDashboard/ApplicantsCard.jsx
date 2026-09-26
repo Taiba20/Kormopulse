@@ -2,9 +2,11 @@ import React from "react";
 import { companyService } from "../../services/companyService";
 import { messageService } from "../../services/messageService";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../i18n/I18nContext";
 
 function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
   const navigate = useNavigate();
+  const { t, formatDate: formatLocaleDate, formatNumber } = useI18n();
 
   // Add debugging to see data structure - reduced logging
   if (!data?.applicantProfile?.userProfile?.profilePicture) {
@@ -16,7 +18,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
     return (
       <div className="rounded-lg border border-neutral-200 bg-white p-6 flex items-center justify-center shadow-lg"
            style={{ boxShadow: '4px 4px 0px #9E0A57' }}>
-        <p className="text-text-secondary">No applicant data available</p>
+        <p className="text-text-secondary">{t("applicantCard.noData")}</p>
       </div>
     );
   }
@@ -40,7 +42,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
   });
 
   const {
-    bio = "No bio available",
+    bio = "",
     education = [],
     workExperience = [],
     address = {},
@@ -51,22 +53,20 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
   } = userProfile;
 
   // Get name from user object directly, fallback to userProfile
-  const name = applicantProfile?.name || userProfile?.name || "Unknown Applicant";
+  const name = applicantProfile?.name || userProfile?.name || t("applicantCard.unknownApplicant");
 
   // Remove the old enhanced debugging as we have it above now
 
-  function formatDate(dateString) {
-    const options = { year: "numeric", month: "short" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  }
+  const formatDate = (dateString) => formatLocaleDate(dateString, { year: "numeric", month: "short" });
 
-  function calculateDuration(start, end) {
+  const calculateDuration = (start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
-    const years = endDate.getFullYear() - startDate.getFullYear();
-    const months = endDate.getMonth() - startDate.getMonth();
-    return `${years} years ${months} months`;
-  }
+    return t("applicantCard.duration", {
+      years: formatNumber(endDate.getFullYear() - startDate.getFullYear()),
+      months: formatNumber(endDate.getMonth() - startDate.getMonth()),
+    });
+  };
 
   const removeApplicant = async () => {
     try {
@@ -77,7 +77,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
       fetchApplications();
     } catch (error) {
       console.log("Error removing application:", error);
-      alert("Failed to reject applicant. Please try again.");
+      alert(t("applicantCard.rejectFailed"));
     }
   };
 
@@ -90,24 +90,24 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
       fetchApplications();
     } catch (error) {
       console.log("Error shortlisting candidate:", error);
-      alert("Failed to shortlist candidate. Please try again.");
+      alert(t("applicantCard.shortlistFailed"));
     }
   };
 
   const hireCandidate = async () => {
     try {
-      const confirmHire = window.confirm(`Are you sure you want to hire ${name}? This will delete the application.`);
+      const confirmHire = window.confirm(t("applicantCard.hireConfirm", { name }));
       if (!confirmHire) return;
       
       await companyService.hireCandidate({
         jobId: jobDetails._id,
         applicantId: applicantProfile._id,
       });
-      alert(`${name} has been hired successfully!`);
+      alert(t("applicantCard.hired", { name }));
       fetchApplications();
     } catch (error) {
       console.log("Error hiring candidate:", error);
-      alert("Failed to hire candidate. Please try again.");
+      alert(t("applicantCard.hireFailed"));
     }
   };
 
@@ -120,7 +120,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
       fetchApplications();
     } catch (error) {
       console.log("Error removing from shortlist:", error);
-      alert("Failed to remove from shortlist. Please try again.");
+      alert(t("applicantCard.removeShortlistFailed"));
     }
   };
 
@@ -130,10 +130,10 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
         applicantId: applicantProfile._id,
         jobId: jobDetails._id
       });
-      alert(`Chat request sent to ${name}! They will be notified in their messages section.`);
+      alert(t("applicantCard.chatSent", { name }));
     } catch (error) {
       console.log("Error sending chat request:", error);
-      alert("Failed to send chat request. Please try again.");
+      alert(t("applicantCard.chatFailed"));
     }
   };
 
@@ -170,7 +170,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
           <div className="relative">
             <img
               src={profilePicture}
-              alt={`${name}'s profile`}
+              alt={name}
               className="w-16 h-16 rounded-full border-4 border-white object-cover"
               onError={(e) => {
                 e.target.src = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
@@ -183,7 +183,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
           <div className="flex-1">
             <h3 className="font-bold text-lg text-white">{name}</h3>
             <div className="flex items-center gap-2 text-white/80 text-sm">
-              <span>{yearsOfExperience || 0} Years Experience</span>
+              <span>{t("applicantCard.yearsExperience", { n: formatNumber(Number(yearsOfExperience) || 0) })}</span>
               {address?.country && (
                 <>
                   <span>•</span>
@@ -193,7 +193,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
             </div>
             <div className="mt-1">
               <span className="inline-block bg-white/20 text-white px-2 py-1 rounded-full text-xs font-medium">
-                Applied {appliedAt ? formatDate(appliedAt) : 'Recently'}
+                {t("applicantCard.applied", { date: appliedAt ? formatDate(appliedAt) : t("applicantCard.recently") })}
               </span>
             </div>
           </div>
@@ -204,25 +204,25 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
       <div className="p-4 border-b border-neutral-100">
         <div className="flex items-center gap-2 mb-2">
           <i className="fa-solid fa-briefcase text-primary"></i>
-          <span className="font-semibold text-text-primary">Applied for:</span>
+          <span className="font-semibold text-text-primary">{t("applicantCard.appliedFor")}</span>
         </div>
-        <p className="text-text-secondary font-medium">{jobDetails?.title || 'Unknown Position'}</p>
+        <p className="text-text-secondary font-medium">{jobDetails?.title || t("applicantCard.unknownPosition")}</p>
         {coverLetter && (
           <div className="mt-2 p-3 bg-neutral-50 rounded-lg">
-            <p className="text-xs text-text-secondary mb-1">Cover Letter:</p>
+            <p className="text-xs text-text-secondary mb-1">{t("applicantCard.coverLetter")}</p>
             <p className="text-sm text-text-primary line-clamp-2">{coverLetter}</p>
           </div>
         )}
       </div>
 
       {/* Bio Section */}
-      {bio && (
+      {(
         <div className="p-4 border-b border-neutral-100">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa-solid fa-user text-primary"></i>
-            <span className="font-semibold text-text-primary">Bio</span>
+            <span className="font-semibold text-text-primary">{t("applicantCard.bio")}</span>
           </div>
-          <p className="text-text-secondary text-sm leading-relaxed">{bio}</p>
+          <p className="text-text-secondary text-sm leading-relaxed">{bio || t("applicantCard.noBio")}</p>
         </div>
       )}
 
@@ -231,7 +231,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
         <div className="p-4 border-b border-neutral-100">
           <div className="flex items-center gap-2 mb-2">
             <i className="fa-solid fa-code text-primary"></i>
-            <span className="font-semibold text-text-primary">Skills</span>
+            <span className="font-semibold text-text-primary">{t("applicantCard.skills")}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {skills.slice(0, 5).map((skill, index) => (
@@ -240,7 +240,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
               </span>
             ))}
             {skills.length > 5 && (
-              <span className="text-text-secondary text-xs">+{skills.length - 5} more</span>
+              <span className="text-text-secondary text-xs">{t("applicantCard.more", { n: formatNumber(skills.length - 5) })}</span>
             )}
           </div>
         </div>
@@ -251,7 +251,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
         <div className="p-4 border-b border-neutral-100">
           <div className="flex items-center gap-2 mb-3">
             <i className="fa-solid fa-building text-primary"></i>
-            <span className="font-semibold text-text-primary">Recent Experience</span>
+            <span className="font-semibold text-text-primary">{t("applicantCard.recentExperience")}</span>
           </div>
           {workExperience.slice(0, 2).map((exp, index) => (
             <div key={index} className="flex gap-3 mb-3 last:mb-0">
@@ -259,7 +259,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
                 <div className="w-10 h-10 rounded-lg overflow-hidden border border-neutral-200 flex items-center justify-center bg-neutral-50">
                   <img
                     src={exp.company?.logoUrl || "https://via.placeholder.com/40?text=Co"}
-                    alt={exp.company?.name || 'Company'}
+                    alt={exp.company?.name || ""}
                     className="w-8 h-8 object-contain"
                     onError={(e) => {
                       e.target.src = "https://via.placeholder.com/40?text=Co";
@@ -269,7 +269,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-text-primary text-sm">{exp.jobTitle}</p>
-                <p className="text-text-secondary text-xs">{exp.company?.name || 'Company'}</p>
+                <p className="text-text-secondary text-xs">{exp.company?.name || t("applicantCard.company")}</p>
                 {exp.startMonth && exp.endMonth && (
                   <p className="text-text-muted text-xs">
                     {formatDate(exp.startMonth)} - {formatDate(exp.endMonth)}
@@ -289,7 +289,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
         <div className="p-4 border-b border-neutral-100">
           <div className="flex items-center gap-2 mb-3">
             <i className="fa-solid fa-graduation-cap text-primary"></i>
-            <span className="font-semibold text-text-primary">Education</span>
+            <span className="font-semibold text-text-primary">{t("applicantCard.education")}</span>
           </div>
           {education.slice(0, 1).map((edu, index) => (
             <div key={index}>
@@ -318,7 +318,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark transition-colors"
-                title="LinkedIn Profile"
+                title={t("applicantCard.linkedin")}
               >
                 <i className="fa-brands fa-linkedin-in text-xs"></i>
               </a>
@@ -329,7 +329,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center hover:bg-accent-dark transition-colors"
-                title="Download Resume"
+                title={t("applicantCard.resume")}
               >
                 <i className="fa-solid fa-file-pdf text-xs"></i>
               </a>
@@ -343,7 +343,7 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
               className="flex-1 py-2 px-3 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center gap-1"
             >
               <i className="fa-solid fa-eye"></i>
-              View Profile
+              {t("applicantCard.viewProfile")}
             </button>
 
             {isShortlisted ? (
@@ -353,21 +353,21 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
                   className="py-2 px-3 bg-success text-white text-xs font-medium rounded-lg hover:bg-success/80 transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-check"></i>
-                  Hire
+                  {t("applicantCard.hire")}
                 </button>
                 <button
                   onClick={removeShortlistedCandidate}
                   className="py-2 px-3 bg-error text-white text-xs font-medium rounded-lg hover:bg-error/80 transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-times"></i>
-                  Remove
+                  {t("applicantCard.remove")}
                 </button>
                 <button
                   onClick={requestToChat}
                   className="py-2 px-3 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary-dark transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-comments"></i>
-                  Chat
+                  {t("applicantCard.chat")}
                 </button>
               </>
             ) : (
@@ -377,21 +377,21 @@ function ApplicantsCard({ isShortlisted, data, fetchApplications }) {
                   className="py-2 px-3 bg-neutral-300 text-text-primary text-xs font-medium rounded-lg hover:bg-neutral-400 transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-times"></i>
-                  Reject
+                  {t("applicantCard.reject")}
                 </button>
                 <button
                   onClick={shortlistCandidate}
                   className="py-2 px-3 bg-warning text-white text-xs font-medium rounded-lg hover:bg-warning/80 transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-star"></i>
-                  Shortlist
+                  {t("applicantCard.shortlist")}
                 </button>
                 <button
                   onClick={requestToChat}
                   className="py-2 px-3 bg-secondary text-white text-xs font-medium rounded-lg hover:bg-secondary-dark transition-colors flex items-center justify-center gap-1"
                 >
                   <i className="fa-solid fa-comments"></i>
-                  Chat
+                  {t("applicantCard.chat")}
                 </button>
               </>
             )}

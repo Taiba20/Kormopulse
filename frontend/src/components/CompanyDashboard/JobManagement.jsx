@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { companyService } from "../../services/companyService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function JobManagement() {
+  const { t, tOr, formatDate } = useI18n();
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
@@ -91,14 +93,14 @@ function JobManagement() {
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
             <i className="fas fa-arrow-left mr-2"></i>
-            Back to Dashboard
+            {t("jobManagement.backToDashboard")}
           </button>
           <button
             onClick={() => navigate(`/pipeline/${jobId}`)}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark"
           >
             <i className="fa-solid fa-table-columns"></i>
-            Open as pipeline board
+            {t("jobManagement.openPipeline")}
           </button>
         </div>
 
@@ -108,7 +110,7 @@ function JobManagement() {
             <p className="text-gray-600 mb-4">{job.company}</p>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location}</span>
-              <span><i className="fas fa-clock mr-1"></i>{job.jobType}</span>
+              <span><i className="fas fa-clock mr-1"></i>{tOr(`enums.jobType.${String(job.jobType || '').toLowerCase()}`, job.jobType)}</span>
               <span><i className="fas fa-dollar-sign mr-1"></i>{job.salaryRange?.min} - {job.salaryRange?.max} {job.salaryRange?.currency}</span>
             </div>
           </div>
@@ -117,12 +119,12 @@ function JobManagement() {
 
       {/* Applications Section */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-6">Applications ({applications.length})</h2>
+        <h2 className="text-xl font-semibold mb-6">{t("jobManagement.applicationsCount", { count: applications.length })}</h2>
         
         {applications.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <i className="fas fa-inbox text-4xl mb-4"></i>
-            <p>No applications yet</p>
+            <p>{t("jobManagement.noApplications")}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -131,7 +133,7 @@ function JobManagement() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">
-                      {application.applicant?.name || 'Unknown Applicant'}
+                      {application.applicant?.name || t("jobManagement.unknownApplicant")}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
                       {application.applicant?.email}
@@ -140,16 +142,16 @@ function JobManagement() {
                       {application.coverLetter}
                     </p>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Applied: {new Date(application.createdAt).toLocaleDateString()}</span>
+                      <span>{t("jobManagement.applied", { date: formatDate(application.createdAt) })}</span>
                       {application.applicant?.skills && (
-                        <span>Skills: {application.applicant.skills.slice(0, 3).join(', ')}</span>
+                        <span>{t("jobManagement.skills", { list: application.applicant.skills.slice(0, 3).join(', ') })}</span>
                       )}
                     </div>
                   </div>
                   
                   <div className="flex flex-col items-end space-y-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
-                      {application.status}
+                      {tOr(`enums.appStatus.${application.status}`, application.status)}
                     </span>
                     
                     <div className="flex space-x-2">
@@ -159,13 +161,13 @@ function JobManagement() {
                             onClick={() => updateApplicationStatus(application._id, 'reviewed')}
                             className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                           >
-                            Review
+                            {t("jobManagement.review")}
                           </button>
                           <button
                             onClick={() => updateApplicationStatus(application._id, 'shortlisted')}
                             className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
                           >
-                            Shortlist
+                            {t("jobManagement.shortlist")}
                           </button>
                         </>
                       )}
@@ -176,13 +178,13 @@ function JobManagement() {
                             onClick={() => updateApplicationStatus(application._id, 'shortlisted')}
                             className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
                           >
-                            Shortlist
+                            {t("jobManagement.shortlist")}
                           </button>
                           <button
                             onClick={() => updateApplicationStatus(application._id, 'rejected')}
                             className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
                           >
-                            Reject
+                            {t("jobManagement.reject")}
                           </button>
                         </>
                       )}
@@ -194,7 +196,7 @@ function JobManagement() {
                           rel="noopener noreferrer"
                           className="px-3 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
                         >
-                          Resume
+                          {t("jobManagement.resume")}
                         </a>
                       )}
                     </div>

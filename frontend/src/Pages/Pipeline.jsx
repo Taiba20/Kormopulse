@@ -3,19 +3,21 @@ import { useNavigate, useParams } from "react-router-dom";
 import { applicationService } from "../services/applicationService";
 import ProposeInterviewModal from "../components/CompanyDashboard/ProposeInterviewModal";
 import MatchBadge from "../components/Common/MatchBadge";
+import { useI18n } from "../i18n/I18nContext";
 
 const COLUMNS = [
-  { key: "pending", label: "Applied", color: "border-neutral-400" },
-  { key: "reviewed", label: "Reviewed", color: "border-blue-500" },
-  { key: "shortlisted", label: "Shortlisted", color: "border-secondary" },
-  { key: "interview", label: "Interview", color: "border-warning" },
-  { key: "hired", label: "Hired", color: "border-success" },
-  { key: "rejected", label: "Rejected", color: "border-error" },
+  { key: "pending", color: "border-neutral-400" },
+  { key: "reviewed", color: "border-blue-500" },
+  { key: "shortlisted", color: "border-secondary" },
+  { key: "interview", color: "border-warning" },
+  { key: "hired", color: "border-success" },
+  { key: "rejected", color: "border-error" },
 ];
 
 const AVATAR_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
 
 function ApplicantCard({ item, onDragStart, onOpenInterview, onMessage }) {
+  const { t, formatDate } = useI18n();
   return (
     <div
       draggable
@@ -39,19 +41,19 @@ function ApplicantCard({ item, onDragStart, onOpenInterview, onMessage }) {
           ))}
         </div>
       )}
-      <p className="text-[11px] text-text-muted mb-2">Applied {new Date(item.appliedAt).toLocaleDateString()}</p>
+      <p className="text-[11px] text-text-muted mb-2">{t("pipeline.applied", { date: formatDate(item.appliedAt) })}</p>
       <div className="flex gap-1.5 flex-wrap">
         {item.applicant.resume && (
           <a href={item.applicant.resume} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline">
-            <i className="fa-solid fa-file-lines mr-1"></i>Resume
+            <i className="fa-solid fa-file-lines mr-1"></i>{t("pipeline.resume")}
           </a>
         )}
         <button onClick={() => onMessage(item.applicant._id)} className="text-[11px] text-primary hover:underline ml-auto">
-          <i className="fa-solid fa-message mr-1"></i>Message
+          <i className="fa-solid fa-message mr-1"></i>{t("pipeline.message")}
         </button>
         {["reviewed", "shortlisted"].includes(item.status) && (
           <button onClick={() => onOpenInterview(item)} className="text-[11px] text-secondary hover:underline">
-            <i className="fa-solid fa-calendar mr-1"></i>Interview
+            <i className="fa-solid fa-calendar mr-1"></i>{t("pipeline.interview")}
           </button>
         )}
       </div>
@@ -60,6 +62,7 @@ function ApplicantCard({ item, onDragStart, onOpenInterview, onMessage }) {
 }
 
 function Pipeline() {
+  const { t, tError, formatNumber } = useI18n();
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
@@ -75,10 +78,12 @@ function Pipeline() {
       setJob(data.job);
       setColumns(data.columns);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load applications.");
+      setError(tError(err, "pipeline.loadFailed"));
     } finally {
       setLoading(false);
     }
+    // tError only changes with the language; reloading the board on a language switch is not needed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
   useEffect(() => {
@@ -97,7 +102,7 @@ function Pipeline() {
     try {
       await applicationService.updateStatus(item._id, toStatus);
     } catch (err) {
-      alert(err.response?.data?.message || "Could not update status. Reverting.");
+      alert(tError(err, "pipeline.updateFailed"));
       load();
     }
   };
@@ -135,10 +140,10 @@ function Pipeline() {
     <div className="mt-16 min-h-screen bg-background-secondary pb-10">
       <div className="px-5 md:px-10 py-6">
         <button onClick={() => navigate(-1)} className="text-sm text-text-secondary hover:text-primary mb-2">
-          <i className="fa-solid fa-arrow-left mr-1.5"></i>Back
+          <i className="fa-solid fa-arrow-left mr-1.5"></i>{t("pipeline.back")}
         </button>
         <h1 className="text-2xl font-bold text-text-primary">{job?.title}</h1>
-        <p className="text-text-secondary text-sm">{job?.location} &middot; Drag cards between columns to update a candidate's status.</p>
+        <p className="text-text-secondary text-sm">{job?.location} &middot; {t("pipeline.hint")}</p>
       </div>
 
       <div className="px-5 md:px-10 flex gap-4 overflow-x-auto pb-4">
@@ -156,9 +161,9 @@ function Pipeline() {
             }`}
           >
             <div className="flex items-center justify-between px-3 py-2.5 border-b border-neutral-200">
-              <span className="font-semibold text-text-primary text-sm">{col.label}</span>
+              <span className="font-semibold text-text-primary text-sm">{t(`pipeline.columns.${col.key}`)}</span>
               <span className="text-xs bg-neutral-200 text-text-secondary rounded-full px-2 py-0.5">
-                {columns[col.key]?.length || 0}
+                {formatNumber(columns[col.key]?.length || 0)}
               </span>
             </div>
             <div className="p-2 min-h-[120px] max-h-[70vh] overflow-y-auto">
@@ -172,7 +177,7 @@ function Pipeline() {
                 />
               ))}
               {(columns[col.key] || []).length === 0 && (
-                <p className="text-xs text-text-muted text-center py-6">No candidates here</p>
+                <p className="text-xs text-text-muted text-center py-6">{t("pipeline.noCandidates")}</p>
               )}
             </div>
           </div>

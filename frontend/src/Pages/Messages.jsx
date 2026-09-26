@@ -3,19 +3,20 @@ import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { messageService } from "../services/messageService";
 import { getSocket } from "../services/socket";
+import { useI18n } from "../i18n/I18nContext";
 
 const AVATAR_FALLBACK = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
 
-const formatTime = (d) => new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-const formatListTime = (d) => {
+const formatListTime = (d, locale) => {
   const date = new Date(d);
   const diffHours = (Date.now() - date) / 3600000;
-  if (diffHours < 24) return formatTime(d);
-  if (diffHours < 168) return date.toLocaleDateString([], { weekday: "short" });
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  if (diffHours < 24) return date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  if (diffHours < 168) return date.toLocaleDateString(locale, { weekday: "short" });
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 };
 
 function ConversationRow({ conv, active, onClick }) {
+  const { locale, formatNumber } = useI18n();
   return (
     <button
       onClick={onClick}
@@ -28,13 +29,13 @@ function ConversationRow({ conv, active, onClick }) {
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-baseline gap-2">
           <p className={`text-sm truncate ${conv.unread > 0 ? "font-semibold text-text-primary" : "font-medium text-text-primary"}`}>{conv.user.name}</p>
-          <span className="text-[11px] text-text-muted flex-shrink-0">{formatListTime(conv.lastMessage.createdAt)}</span>
+          <span className="text-[11px] text-text-muted flex-shrink-0">{formatListTime(conv.lastMessage.createdAt, locale)}</span>
         </div>
         <div className="flex justify-between items-center gap-2">
           <p className="text-xs text-text-secondary truncate">{conv.lastMessage.content}</p>
           {conv.unread > 0 && (
             <span className="flex-shrink-0 bg-primary text-white text-[10px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-              {conv.unread}
+              {formatNumber(conv.unread)}
             </span>
           )}
         </div>
@@ -44,6 +45,7 @@ function ConversationRow({ conv, active, onClick }) {
 }
 
 function Messages() {
+  const { t, tError, formatTime } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeUserId = searchParams.get("chat");
@@ -177,7 +179,7 @@ function Messages() {
       appendMessage(message);
       loadConversations();
     } catch (error) {
-      alert(error.response?.data?.message || "Could not send message.");
+      alert(tError(error, "chat.sendFailed"));
       setDraft(content);
     } finally {
       setSending(false);
@@ -191,7 +193,7 @@ function Messages() {
       {/* Conversation list */}
       <div className={`w-full md:w-80 flex-shrink-0 border-r border-neutral-200 bg-background overflow-y-auto ${showListOnMobile ? "block" : "hidden md:block"}`}>
         <div className="px-4 py-3.5 border-b border-neutral-200">
-          <h1 className="font-semibold text-text-primary">Messages</h1>
+          <h1 className="font-semibold text-text-primary">{t("chat.title")}</h1>
         </div>
         {loadingList ? (
           <div className="flex justify-center py-10">
@@ -199,7 +201,7 @@ function Messages() {
           </div>
         ) : conversations.length === 0 ? (
           <p className="text-sm text-text-secondary text-center py-10 px-4">
-            No conversations yet. {userData?.role === "jobSeeker" ? "Apply to jobs to connect with employers." : "Message a candidate from your pipeline."}
+            {userData?.role === "jobSeeker" ? t("chat.emptySeeker") : t("chat.emptyEmployer")}
           </p>
         ) : (
           conversations.map((conv) => (
@@ -220,14 +222,14 @@ function Messages() {
       <div className={`flex-1 flex flex-col ${showListOnMobile ? "hidden md:flex" : "flex"}`}>
         {!activeUserId ? (
           <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">
-            Select a conversation to start chatting.
+            {t("chat.select")}
           </div>
         ) : loadingThread ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : !thread ? (
-          <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">Conversation not found.</div>
+          <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">{t("chat.notFound")}</div>
         ) : (
           <>
             <div className="px-4 py-3 border-b border-neutral-200 bg-background flex items-center gap-3">
@@ -237,7 +239,7 @@ function Messages() {
               <img src={AVATAR_FALLBACK} alt="" className="h-9 w-9 rounded-full" />
               <div>
                 <p className="font-medium text-text-primary text-sm">{thread.user.name}</p>
-                <p className="text-xs text-text-secondary">{thread.user.online ? "Online" : "Offline"}</p>
+                <p className="text-xs text-text-secondary">{thread.user.online ? t("chat.online") : t("chat.offline")}</p>
               </div>
             </div>
 
@@ -256,7 +258,7 @@ function Messages() {
               ))}
               {otherTyping && (
                 <div className="flex justify-start">
-                  <div className="bg-neutral-100 rounded-2xl rounded-bl-sm px-3.5 py-2 text-xs text-text-secondary italic">typing...</div>
+                  <div className="bg-neutral-100 rounded-2xl rounded-bl-sm px-3.5 py-2 text-xs text-text-secondary italic">{t("chat.typing")}</div>
                 </div>
               )}
               <div ref={bottomRef} />
@@ -266,7 +268,7 @@ function Messages() {
               <input
                 value={draft}
                 onChange={(e) => handleDraftChange(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={t("chat.placeholder")}
                 maxLength={2000}
                 className="flex-1 border border-neutral-300 rounded-full px-4 py-2 text-sm bg-background text-text-primary"
               />

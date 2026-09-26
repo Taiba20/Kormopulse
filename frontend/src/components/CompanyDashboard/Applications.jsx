@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import ApplicantsCard from "./ApplicantsCard";
 import SelectInput from "../Common/FormComponents/SelectInput";
 import { companyService } from "../../services/companyService.js";
+import { useI18n } from "../../i18n/I18nContext";
 function Applications() {
-  const [sortValue, setSortValue] = useState("latest value");
+  const { t } = useI18n();
+  const [sortValue, setSortValue] = useState("date");
   const sortOptions = [
-    { value: "experience", label: "Experience" },
-    { value: "date", label: "Application Date" },
+    { value: "experience", label: t("applicants.sortExperience") },
+    { value: "date", label: t("applicants.sortDate") },
   ];
 
   const handleSortChange = (event) => {
@@ -66,7 +68,7 @@ function Applications() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen ">
-        Loading...
+        {t("applicants.loading")}
       </div>
     );
   }
@@ -74,9 +76,9 @@ function Applications() {
   return (
     <div className="py-3 px-2 md:px-8 lg:px-20 pt-20">
       <div className="font-medium text-2xl my-5 flex flex-col md:flex-row gap-3 justify-between md:items-center ml-5 md:ml-0">
-        <span>Applications</span>
+        <span>{t("applicants.pageApplications")}</span>
         <div className="flex items-center gap-3">
-          <span className="text-sm">Sort by</span>
+          <span className="text-sm">{t("applicants.sortBy")}</span>
           <SelectInput
             options={sortOptions}
             value={sortValue}
@@ -96,7 +98,7 @@ function Applications() {
           ))
         ) : (
           <p className="text-center w font-medium">
-            {loading ? "Loading applications..." : "No applicants found."}
+            {loading ? t("applicants.loadingApplications") : t("applicants.noApplicants")}
           </p>
         )}
       </div>

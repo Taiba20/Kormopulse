@@ -3,8 +3,10 @@ import { useSelector } from "react-redux";
 import { userService } from "../../services/userService";
 import InputField from "../Common/FormComponents/InputField";
 import ChangePassword from "../UserProfile/ChangePassword";
+import { useI18n } from "../../i18n/I18nContext";
 
 function CompanyProfile() {
+  const { t } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const [loading, setLoading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -91,13 +93,13 @@ function CompanyProfile() {
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert(t('company.notImage'));
       return;
     }
 
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      alert(t('company.tooBig'));
       return;
     }
 
@@ -110,10 +112,10 @@ function CompanyProfile() {
         companyLogo: response.data.user?.userProfile?.companyLogo || response.data.profilePicture
       }));
       
-      alert('Company logo updated successfully!');
+      alert(t('company.logoUpdated'));
     } catch (error) {
       console.error('Error uploading logo:', error);
-      alert('Failed to upload logo. Please try again.');
+      alert(t('company.logoFailed'));
     } finally {
       setLogoUploading(false);
     }
@@ -123,7 +125,7 @@ function CompanyProfile() {
     e.preventDefault();
     
     if (!companyProfile.companyName || companyProfile.companyName.trim() === "") {
-      alert("Please enter a company name");
+      alert(t("company.nameRequired"));
       return;
     }
     
@@ -131,13 +133,13 @@ function CompanyProfile() {
       setLoading(true);
       const res = await userService.updateUserProfile(companyProfile);
       if (res.status === 200) {
-        alert("Company profile updated successfully!");
+        alert(t("company.updated"));
         // Optionally reload user data
         loadUserData();
       }
     } catch (error) {
       console.error('Company profile update error:', error);
-      alert('Failed to update company profile. Please try again.');
+      alert(t('company.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -157,7 +159,7 @@ function CompanyProfile() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Company Profile
+              {t('company.tabProfile')}
             </button>
             <button
               onClick={() => setActiveTab("password")}
@@ -167,7 +169,7 @@ function CompanyProfile() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Change Password
+              {t('company.tabPassword')}
             </button>
           </nav>
         </div>
@@ -177,19 +179,19 @@ function CompanyProfile() {
           {activeTab === "profile" && (
             <div>
               <div className="mb-8">
-                <h1 className="text-3xl font-bold text-text-primary mb-2">Company Profile</h1>
-                <p className="text-text-secondary">Manage your company information and settings</p>
+                <h1 className="text-3xl font-bold text-text-primary mb-2">{t('company.title')}</h1>
+                <p className="text-text-secondary">{t('company.subtitle')}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
           {/* Company Logo Section */}
           <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
-            <h3 className="text-xl font-semibold text-text-primary mb-6">Company Logo</h3>
+            <h3 className="text-xl font-semibold text-text-primary mb-6">{t('company.logoTitle')}</h3>
             <div className="flex flex-col items-center space-y-4">
               <div className="w-24 h-24 rounded-full border-4 border-primary/20 overflow-hidden bg-neutral-100">
                 <img
                   src={companyProfile.companyLogo}
-                  alt="Company Logo"
+                  alt=""
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.src = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
@@ -208,36 +210,36 @@ function CompanyProfile() {
                   htmlFor="logo-upload"
                   className={`px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors cursor-pointer ${logoUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                  {logoUploading ? t('company.uploading') : t('company.upload')}
                 </label>
-                <p className="text-sm text-text-secondary">Max 5MB, JPG/PNG</p>
+                <p className="text-sm text-text-secondary">{t('company.logoHint')}</p>
               </div>
             </div>
           </div>
 
           {/* Basic Information */}
           <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
-            <h3 className="text-xl font-semibold text-text-primary mb-6">Basic Information</h3>
+            <h3 className="text-xl font-semibold text-text-primary mb-6">{t('company.basic')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputField
-                label="Company Name *"
+                label={t("company.name")}
                 id="companyName"
                 name="companyName"
                 value={companyProfile.companyName}
                 onChange={handleChange}
-                placeholder="Enter your company name"
+                placeholder={t("company.namePlaceholder")}
                 required
               />
               <InputField
-                label="Industry"
+                label={t("company.industry")}
                 id="industry"
                 name="industry"
                 value={companyProfile.industry}
                 onChange={handleChange}
-                placeholder="e.g., Technology, Healthcare"
+                placeholder={t("company.industryPlaceholder")}
               />
               <InputField
-                label="Company Website"
+                label={t("company.website")}
                 id="companyWebsite"
                 name="companyWebsite"
                 value={companyProfile.companyWebsite}
@@ -245,7 +247,7 @@ function CompanyProfile() {
                 placeholder="https://www.yourcompany.com"
               />
               <InputField
-                label="Contact Number"
+                label={t("company.contact")}
                 id="contactNumber"
                 name="contactNumber"
                 value={companyProfile.contactNumber}
@@ -256,14 +258,14 @@ function CompanyProfile() {
             
             <div className="mt-6">
               <label className="block text-sm font-medium text-text-primary mb-2">
-                Company Description
+                {t('company.description')}
               </label>
               <textarea
                 id="companyDescription"
                 name="companyDescription"
                 value={companyProfile.companyDescription}
                 onChange={handleChange}
-                placeholder="Tell us about your company, its mission, values, and what makes it unique"
+                placeholder={t("company.descriptionPlaceholder")}
                 rows="4"
                 className="w-full px-4 py-3 text-base border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-200 bg-background text-text-primary placeholder-text-secondary/60 resize-none"
               />
@@ -272,10 +274,10 @@ function CompanyProfile() {
 
           {/* Company Size */}
           <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
-            <h3 className="text-xl font-semibold text-text-primary mb-6">Company Size</h3>
+            <h3 className="text-xl font-semibold text-text-primary mb-6">{t('company.size')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputField
-                label="From (number of employees)"
+                label={t("company.sizeFrom")}
                 id="companySize.from"
                 name="companySize.from"
                 type="number"
@@ -284,7 +286,7 @@ function CompanyProfile() {
                 placeholder="1"
               />
               <InputField
-                label="To (number of employees)"
+                label={t("company.sizeTo")}
                 id="companySize.to"
                 name="companySize.to"
                 type="number"
@@ -297,10 +299,10 @@ function CompanyProfile() {
 
           {/* Address */}
           <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
-            <h3 className="text-xl font-semibold text-text-primary mb-6">Address</h3>
+            <h3 className="text-xl font-semibold text-text-primary mb-6">{t('company.address')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <InputField
-                label="City"
+                label={t("company.city")}
                 id="address.city"
                 name="address.city"
                 value={companyProfile.address.city}
@@ -308,7 +310,7 @@ function CompanyProfile() {
                 placeholder="New York"
               />
               <InputField
-                label="State"
+                label={t("company.state")}
                 id="address.state"
                 name="address.state"
                 value={companyProfile.address.state}
@@ -316,7 +318,7 @@ function CompanyProfile() {
                 placeholder="NY"
               />
               <InputField
-                label="Country"
+                label={t("company.country")}
                 id="address.country"
                 name="address.country"
                 value={companyProfile.address.country}
@@ -328,10 +330,10 @@ function CompanyProfile() {
 
           {/* Social Profiles */}
           <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
-            <h3 className="text-xl font-semibold text-text-primary mb-6">Social Profiles</h3>
+            <h3 className="text-xl font-semibold text-text-primary mb-6">{t('company.socials')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <InputField
-                label="LinkedIn"
+                label={t("profile.socialForm.linkedin")}
                 id="companySocialProfiles.linkedIn"
                 name="companySocialProfiles.linkedIn"
                 value={companyProfile.companySocialProfiles.linkedIn}
@@ -339,7 +341,7 @@ function CompanyProfile() {
                 placeholder="https://linkedin.com/company/yourcompany"
               />
               <InputField
-                label="Twitter"
+                label={t("profile.socialForm.twitter")}
                 id="companySocialProfiles.twitter"
                 name="companySocialProfiles.twitter"
                 value={companyProfile.companySocialProfiles.twitter}
@@ -356,14 +358,14 @@ function CompanyProfile() {
               onClick={loadUserData}
               className="px-6 py-3 border border-neutral-300 text-text-primary rounded-lg hover:bg-neutral-50 transition-colors"
             >
-              Reset
+              {t('company.reset')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className={`px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Updating...' : 'Update Profile'}
+              {loading ? t('company.updating') : t('company.update')}
             </button>
           </div>
               </form>

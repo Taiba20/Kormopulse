@@ -5,15 +5,17 @@ import AdminOverview from "../components/Admin/AdminOverview";
 import AdminUsers from "../components/Admin/AdminUsers";
 import AdminJobs from "../components/Admin/AdminJobs";
 import AdminReviews from "../components/Admin/AdminReviews";
+import { useI18n } from "../i18n/I18nContext";
 
 const links = [
-  { to: "/admin/overview", label: "Overview", icon: "fa-chart-pie" },
-  { to: "/admin/users", label: "Users", icon: "fa-users" },
-  { to: "/admin/jobs", label: "Jobs", icon: "fa-briefcase" },
-  { to: "/admin/reviews", label: "Reviews", icon: "fa-star" },
+  { to: "/admin/overview", key: "overview", icon: "fa-chart-pie" },
+  { to: "/admin/users", key: "users", icon: "fa-users" },
+  { to: "/admin/jobs", key: "jobs", icon: "fa-briefcase" },
+  { to: "/admin/reviews", key: "reviews", icon: "fa-star" },
 ];
 
 function AdminDashboard() {
+  const { t } = useI18n();
   const { userData } = useSelector((store) => store.auth);
 
   if (userData && userData.role !== "admin") {
@@ -23,7 +25,7 @@ function AdminDashboard() {
   return (
     <div className="mt-16 min-h-screen flex">
       <aside className="w-56 flex-shrink-0 border-r border-neutral-200 bg-background py-6 hidden md:block">
-        <p className="px-5 text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">Admin</p>
+        <p className="px-5 text-xs font-semibold text-text-muted uppercase tracking-wide mb-3">{t("admin.label")}</p>
         <nav className="flex flex-col gap-1 px-2">
           {links.map((l) => (
             <NavLink
@@ -36,7 +38,7 @@ function AdminDashboard() {
               }
             >
               <i className={`fa-solid ${l.icon} w-4`}></i>
-              {l.label}
+              {t(`admin.nav.${l.key}`)}
             </NavLink>
           ))}
         </nav>

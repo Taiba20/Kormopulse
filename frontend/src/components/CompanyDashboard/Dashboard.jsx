@@ -16,8 +16,10 @@ import {
 
 import { companyService } from "../../services/companyService";
 import { messageService } from "../../services/messageService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Dashboard() {
+  const { t, tOr, formatDate, formatNumber } = useI18n();
   const [jobData, setJobData] = useState([]);
   const [applicants, setApplicants] = useState(0);
   const [closedJobs, setClosedJobs] = useState(0);
@@ -107,9 +109,9 @@ function Dashboard() {
       {/* Welcome Section */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {userData?.userProfile?.companyName || userData?.name}!
+          {t("employer.dashboard.welcome", { name: userData?.userProfile?.companyName || userData?.name })}
         </h1>
-        <p className="text-gray-600">Manage your recruitment process and track applications.</p>
+        <p className="text-gray-600">{t("employer.dashboard.welcomeSub")}</p>
       </div>
 
       {/* Stats Cards */}
@@ -120,8 +122,8 @@ function Dashboard() {
               <i className="fa-solid fa-briefcase text-lg"></i>
             </div>
             <div className="flex flex-col justify-center">
-              <p className="font-semibold text-xl text-gray-900">{Array.isArray(jobData) ? jobData.length : 0}</p>
-              <p className="text-sm text-gray-500">Active Jobs</p>
+              <p className="font-semibold text-xl text-gray-900">{formatNumber(Array.isArray(jobData) ? jobData.length : 0)}</p>
+              <p className="text-sm text-gray-500">{t("employer.dashboard.activeJobs")}</p>
             </div>
           </div>
         </div>
@@ -132,8 +134,8 @@ function Dashboard() {
               <i className="fa-solid fa-users text-lg"></i>
             </div>
             <div className="flex flex-col justify-center">
-              <p className="font-semibold text-xl text-gray-900">{applicants}</p>
-              <p className="text-sm text-gray-500">Total Applications</p>
+              <p className="font-semibold text-xl text-gray-900">{formatNumber(applicants)}</p>
+              <p className="text-sm text-gray-500">{t("employer.dashboard.totalApplications")}</p>
             </div>
           </div>
         </div>
@@ -144,8 +146,8 @@ function Dashboard() {
               <i className="fa-regular fa-rectangle-xmark text-lg"></i>
             </div>
             <div className="flex flex-col justify-center">
-              <p className="font-semibold text-xl text-gray-900">{closedJobs}</p>
-              <p className="text-sm text-gray-500">Closed Jobs</p>
+              <p className="font-semibold text-xl text-gray-900">{formatNumber(closedJobs)}</p>
+              <p className="text-sm text-gray-500">{t("employer.dashboard.closedJobs")}</p>
             </div>
           </div>
         </div>
@@ -156,8 +158,8 @@ function Dashboard() {
               <i className="fa-solid fa-envelope text-lg"></i>
             </div>
             <div className="flex flex-col justify-center">
-              <p className="font-semibold text-xl text-gray-900">{unreadMessages}</p>
-              <p className="text-sm text-gray-500">New Messages</p>
+              <p className="font-semibold text-xl text-gray-900">{formatNumber(unreadMessages)}</p>
+              <p className="text-sm text-gray-500">{t("employer.dashboard.newMessages")}</p>
             </div>
           </div>
         </div>
@@ -169,7 +171,7 @@ function Dashboard() {
                 <i className="fa-solid fa-plus text-lg"></i>
               </div>
               <div className="flex flex-col justify-center">
-                <p className="font-semibold text-lg text-[var(--color-text-inverse)]">Post a Job</p>
+                <p className="font-semibold text-lg text-[var(--color-text-inverse)]">{t("employer.dashboard.postJob")}</p>
               </div>
             </div>
           </div>
@@ -181,18 +183,18 @@ function Dashboard() {
         {/* Recent Applications */}
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("employer.dashboard.recentApplications")}</h3>
             <Link
               to="/dashboard/applications"
               className="text-sm text-primary hover:text-primary-dark font-medium"
             >
-              View All
+              {t("employer.dashboard.viewAll")}
             </Link>
           </div>
           {recentApplications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <i className="fas fa-inbox text-3xl mb-4 text-gray-300"></i>
-              <p>No recent applications</p>
+              <p>{t("employer.dashboard.noRecent")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -201,20 +203,20 @@ function Dashboard() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 text-sm">
-                        {application.applicant?.name || 'Applicant'}
+                        {application.applicant?.name || t('employer.dashboard.applicant')}
                       </h4>
                       <p className="text-sm text-gray-600 mb-1">
-                        Applied for: {application.jobTitle}
+                        {t('employer.dashboard.appliedFor', { title: application.jobTitle })}
                       </p>
                       <div className="flex items-center space-x-3 text-xs text-gray-500">
-                        <span>{new Date(application.createdAt || application.appliedAt).toLocaleDateString()}</span>
+                        <span>{formatDate(application.createdAt || application.appliedAt)}</span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           application.status === 'pending' ? 'bg-warning/10 text-warning' :
                           application.status === 'shortlisted' ? 'bg-success/10 text-success' :
                           application.status === 'rejected' ? 'bg-error/10 text-error' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {application.status || 'Pending'}
+                          {tOr(`enums.appStatus.${application.status}`, application.status) || t('enums.appStatus.pending')}
                         </span>
                       </div>
                     </div>
@@ -222,7 +224,7 @@ function Dashboard() {
                       onClick={() => redirectToDetail(application.jobId)}
                       className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                     >
-                      View
+                      {t("employer.dashboard.view")}
                     </button>
                   </div>
                 </div>
@@ -233,7 +235,7 @@ function Dashboard() {
 
         {/* Quick Actions */}
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("employer.dashboard.quickActions")}</h3>
           <div className="space-y-3">
             <Link
               to="/dashboard/post-job"
@@ -243,8 +245,8 @@ function Dashboard() {
                 <i className="fas fa-plus text-primary"></i>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Post New Job</h4>
-                <p className="text-sm text-gray-500">Create a new job listing</p>
+                <h4 className="font-medium text-gray-900">{t("employer.dashboard.postNewJob")}</h4>
+                <p className="text-sm text-gray-500">{t("employer.dashboard.postNewJobSub")}</p>
               </div>
             </Link>
 
@@ -256,8 +258,8 @@ function Dashboard() {
                 <i className="fas fa-users text-success"></i>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Review Applications</h4>
-                <p className="text-sm text-gray-500">Manage candidate applications</p>
+                <h4 className="font-medium text-gray-900">{t("employer.dashboard.reviewApplications")}</h4>
+                <p className="text-sm text-gray-500">{t("employer.dashboard.reviewApplicationsSub")}</p>
               </div>
             </Link>
 
@@ -269,8 +271,8 @@ function Dashboard() {
                 <i className="fas fa-envelope text-warning"></i>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Messages</h4>
-                <p className="text-sm text-gray-500">Communicate with candidates</p>
+                <h4 className="font-medium text-gray-900">{t("employer.dashboard.messages")}</h4>
+                <p className="text-sm text-gray-500">{t("employer.dashboard.messagesSub")}</p>
               </div>
             </Link>
 
@@ -282,8 +284,8 @@ function Dashboard() {
                 <i className="fas fa-building text-success"></i>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Company Profile</h4>
-                <p className="text-sm text-gray-500">Update company information</p>
+                <h4 className="font-medium text-gray-900">{t("employer.dashboard.companyProfile")}</h4>
+                <p className="text-sm text-gray-500">{t("employer.dashboard.companyProfileSub")}</p>
               </div>
             </Link>
           </div>
@@ -293,16 +295,16 @@ function Dashboard() {
       {/* Job Listings Table */}
       <Card>
         <h3 className="text-tremor-content-strong dark:text-dark-tremor-content-strong font-semibold text-lg mb-4">
-          Your Job Listings
+          {t("employer.dashboard.yourListings")}
         </h3>
         <Table className="mt-2">
           <TableHead>
             <TableRow>
-              <TableHeaderCell>Job Title</TableHeaderCell>
-              <TableHeaderCell>Applications</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell>Posted Date</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
+              <TableHeaderCell>{t("employer.dashboard.colTitle")}</TableHeaderCell>
+              <TableHeaderCell>{t("employer.dashboard.colApplications")}</TableHeaderCell>
+              <TableHeaderCell>{t("employer.dashboard.colStatus")}</TableHeaderCell>
+              <TableHeaderCell>{t("employer.dashboard.colPosted")}</TableHeaderCell>
+              <TableHeaderCell>{t("employer.dashboard.colActions")}</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -311,15 +313,15 @@ function Dashboard() {
                 <TableRow key={index}>
                   <TableCell>{job.title}</TableCell>
                   <TableCell>
-                    <span className="font-medium">{job?.applicants?.length || 0}</span>
+                    <span className="font-medium">{formatNumber(job?.applicants?.length || 0)}</span>
                   </TableCell>
                   <TableCell>
                     <Badge color={job.isActive !== false ? "emerald" : "red"}>
-                      {job.isActive !== false ? "active" : "inactive"}
+                      {job.isActive !== false ? t("employer.dashboard.active") : t("employer.dashboard.inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
+                    {job.createdAt ? formatDate(job.createdAt) : t('employer.dashboard.notAvailable')}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -327,13 +329,13 @@ function Dashboard() {
                         color="black"
                         onClick={() => redirectToDetail(job._id)}
                       >
-                        Manage
+                        {t("employer.dashboard.manage")}
                       </Button>
                       <Button
                         color="fuchsia"
                         onClick={() => navigate(`/pipeline/${job._id}`)}
                       >
-                        Pipeline
+                        {t("employer.dashboard.pipeline")}
                       </Button>
                     </div>
                   </TableCell>
@@ -342,7 +344,7 @@ function Dashboard() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-gray-500 py-8">
-                  {Array.isArray(jobData) ? "No jobs posted yet" : "Loading jobs..."}
+                  {Array.isArray(jobData) ? t("employer.dashboard.noJobs") : t("employer.dashboard.loadingJobs")}
                 </TableCell>
               </TableRow>
             )}

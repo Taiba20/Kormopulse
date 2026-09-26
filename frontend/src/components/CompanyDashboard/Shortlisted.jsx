@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import ApplicantsCard from "./ApplicantsCard";
 import SelectInput from "../Common/FormComponents/SelectInput";
 import { companyService } from "../../services/companyService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Shortlisted() {
-  const [sortValue, setSortValue] = useState("latest value");
+  const { t } = useI18n();
+  const [sortValue, setSortValue] = useState("date");
   const sortOptions = [
-    { value: "experience", label: "Experience" },
-    { value: "date", label: "Application Date" },
+    { value: "experience", label: t("applicants.sortExperience") },
+    { value: "date", label: t("applicants.sortDate") },
   ];
 
   const handleSortChange = (event) => {
@@ -56,7 +58,7 @@ function Shortlisted() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen ">
-        Loading...
+        {t("applicants.loading")}
       </div>
     );
   }
@@ -64,9 +66,9 @@ function Shortlisted() {
   return (
     <div className="py-3 px-2 md:px-8 lg:px-20 pt-20">
       <div className="font-medium text-2xl my-5 flex flex-col md:flex-row gap-3 justify-between md:items-center ml-5 md:ml-0">
-        <span>Shortlisted Candidates</span>
+        <span>{t("applicants.pageShortlisted")}</span>
         <div className="flex items-center gap-3">
-          <span className="text-sm">Sort by</span>
+          <span className="text-sm">{t("applicants.sortBy")}</span>
           <SelectInput
             options={sortOptions}
             value={sortValue}
@@ -86,7 +88,7 @@ function Shortlisted() {
           ))
         ) : (
           <p className="text-center font-medium">
-            {loading ? "Loading shortlisted candidates..." : "No shortlisted candidates found."}
+            {loading ? t("applicants.loadingShortlisted") : t("applicants.noShortlisted")}
           </p>
         )}
       </div>
