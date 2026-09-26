@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { userService } from "../../services/userService";
 import { useSelector } from "react-redux";
+import ApplyModal from "./ApplyModal";
+import InterviewPrepModal from "./InterviewPrepModal";
+import MatchBreakdown from "../Common/MatchBreakdown";
 
 function JobDetailsCard({ jobData }) {
   const { userData } = useSelector((store) => store.auth);
@@ -66,6 +69,8 @@ function JobDetailsCard({ jobData }) {
   const [hasSaved, setHasSaved] = useState(false);
   const [showAppliedMessage, setShowAppliedMessage] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showPrepModal, setShowPrepModal] = useState(false);
 
   // Check application status when component mounts and user/job data is available
   useEffect(() => {
@@ -104,25 +109,18 @@ function JobDetailsCard({ jobData }) {
     setSaving(false);
   };
 
-  const applyForJob = async () => {
-    if (hasApplied) {
-      return;
-    }
-    
-    const confirmApply = window.confirm("Are you sure you want to apply for this job?");
-    if (!confirmApply) {
-      return;
-    }
-
+  const submitApplication = async (coverLetter) => {
     setApplying(true);
     try {
-      await userService.applyForJob(jobData._id);
+      await userService.applyForJob(jobData._id, { coverLetter });
       setHasApplied(true);
+      setShowApplyModal(false);
       setShowAppliedMessage(true);
       setTimeout(() => setShowAppliedMessage(false), 5000);
     } catch (error) {
-      if (error.response?.data?.message === "Job has already been applied for") {
+      if (error.response?.data?.message === "You have already applied for this job") {
         setHasApplied(true);
+        setShowApplyModal(false);
         alert("You have already applied for this job. Your profile has been shared with the recruiter.");
       } else {
         alert(error.response?.data?.message || "Failed to apply for job. Please try again.");
@@ -247,7 +245,7 @@ function JobDetailsCard({ jobData }) {
                   : "bg-primary text-white hover:bg-primary-dark hover:shadow-lg"
                 : "bg-neutral-400 text-white cursor-not-allowed"
             }`}
-            onClick={applyForJob}
+            onClick={() => setShowApplyModal(true)}
             disabled={userData?.role !== "jobSeeker" || applying || hasApplied}
             title={
               !userData
@@ -262,8 +260,31 @@ function JobDetailsCard({ jobData }) {
             <i className={`mr-2 ${hasApplied ? "fas fa-paper-plane" : "far fa-paper-plane"}`}></i>
             {applying ? "Applying..." : hasApplied ? "Applied" : "Apply Now"}
           </button>
+          {userData?.role === "jobSeeker" && (
+            <button
+              onClick={() => setShowPrepModal(true)}
+              className="h-11 px-6 rounded-xl font-medium border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all duration-200 hover:scale-105"
+            >
+              <i className="fa-solid fa-graduation-cap mr-2"></i>
+              Prep for interview
+            </button>
+          )}
         </div>
       </div>
+
+      {userData?.role === "jobSeeker" && <MatchBreakdown jobId={jobData._id} />}
+
+      {showApplyModal && (
+        <ApplyModal
+          job={{ jobId: jobData._id, title }}
+          submitting={applying}
+          onClose={() => setShowApplyModal(false)}
+          onSubmit={submitApplication}
+        />
+      )}
+      {showPrepModal && (
+        <InterviewPrepModal jobId={jobData._id} jobTitle={title} onClose={() => setShowPrepModal(false)} />
+      )}
     </div>
   );
 }

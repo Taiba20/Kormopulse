@@ -18,7 +18,12 @@ export const companyService = {
   saveJob,
   removeSavedJob,
   hireCandidate,
+  getAnalytics,
 };
+
+async function getAnalytics(days = 30) {
+  return apiCall("get", "/company/analytics", { params: { days } });
+}
 
 async function getMyJobs() {
   return apiCall("get", "/jobs/my-jobs");

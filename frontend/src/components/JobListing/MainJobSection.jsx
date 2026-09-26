@@ -4,12 +4,16 @@ import SideBarFilter from "./SideBarFilter";
 import JobCard from "./JobCard";
 import { useEffect } from "react";
 import { contentService } from "../../services/contentService";
+import { applicationService } from "../../services/applicationService";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function MainJobSection() {
+  const { userData } = useSelector((store) => store.auth);
   const [searchParams] = useSearchParams();
   const companyFilter = searchParams.get('company');
-  
+  const [matches, setMatches] = useState({});
+
   const [filters, setFilters] = useState({
     datePosted: "",
     jobTypes: [],
@@ -36,7 +40,14 @@ function MainJobSection() {
       console.log('MainJobSection: Jobs API response:', res);
       if (res && res.jobs) {
         console.log('MainJobSection: Setting jobs, count:', res.jobs.length);
-        setJobs(Array.isArray(res.jobs) ? res.jobs : []);
+        const jobList = Array.isArray(res.jobs) ? res.jobs : [];
+        setJobs(jobList);
+        if (userData?.role === "jobSeeker" && jobList.length > 0) {
+          applicationService
+            .getMatchScores(jobList.map((j) => j._id))
+            .then((data) => setMatches(data.scores || {}))
+            .catch(() => {});
+        }
       } else {
         console.warn('MainJobSection: Unexpected response structure:', res);
         setJobs([]);
@@ -92,6 +103,7 @@ function MainJobSection() {
                   key={job._id}
                   job={job}
                   redirectToDetail={redirectToDetail}
+                  match={matches[job._id]}
                 />
               ))
             ) : (

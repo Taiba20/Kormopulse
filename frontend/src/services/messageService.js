@@ -7,8 +7,23 @@ export const messageService = {
   markMessageAsRead,
   markAllMessagesAsRead,
   getUnreadMessageCount,
-  sendMessageResponse
+  sendMessageResponse,
+  getConversations,
+  getConversation,
+  sendChat,
 };
+
+async function getConversations() {
+  return apiCall("get", "/messages/conversations");
+}
+
+async function getConversation(userId, params = {}) {
+  return apiCall("get", `/messages/conversation/${userId}`, { params });
+}
+
+async function sendChat(to, content, relatedJob) {
+  return apiCall("post", "/messages/chat", { to, content, relatedJob });
+}
 
 async function sendMessage(data) {
   return apiCall("post", "/messages/send", data);

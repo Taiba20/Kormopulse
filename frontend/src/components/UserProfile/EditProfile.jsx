@@ -9,12 +9,14 @@ import { useSelector } from "react-redux";
 import SkillsSearch from "../Common/SkillsSearch";
 import { userService } from "../../services/userService";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
+import ResumeImportModal from "./ResumeImportModal";
 
 function EditProfile() {
   const [showAddWorkExperience, setShowAddWorkExperience] = useState(false);
   const [showAddEducation, setShowAddEducation] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState(new Map());
   const [skillsMessage, setSkillsMessage] = useState('');
+  const [showResumeImport, setShowResumeImport] = useState(false);
 
   const { userData } = useSelector((store) => store.auth);
   const userEducation = userData?.userProfile?.education;
@@ -79,6 +81,15 @@ function EditProfile() {
   }
   return (
     <div className="px-6 py-4">
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={() => setShowResumeImport(true)}
+          className="flex items-center gap-2 text-sm bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary/20"
+        >
+          <i className="fa-solid fa-wand-magic-sparkles"></i>
+          Import from resume
+        </button>
+      </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
           <p className="font-semibold text-primary">About</p>
@@ -198,6 +209,16 @@ function EditProfile() {
           />
         </div>
       </div>
+
+      {showResumeImport && (
+        <ResumeImportModal
+          onClose={() => setShowResumeImport(false)}
+          onApplied={async () => {
+            setShowResumeImport(false);
+            await updateUserData();
+          }}
+        />
+      )}
     </div>
   );
 }

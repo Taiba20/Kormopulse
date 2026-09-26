@@ -1,7 +1,8 @@
 import React from "react";
 import Dot from "../Dot";
+import MatchBadge from "../Common/MatchBadge";
 
-function JobCard({ job, redirectToDetail }) {
+function JobCard({ job, redirectToDetail, match }) {
   console.log('JobCard received job:', job); // Debug log
   
   const {
@@ -96,8 +97,9 @@ function JobCard({ job, redirectToDetail }) {
               <img src={companyLogo} />
             </div>
             <div className="flex flex-col mb-2 md:mb-0">
-              <div className="title">
+              <div className="title flex items-center gap-2 flex-wrap">
                 <p className="font-bold text-text-primary">{title}</p>
+                <MatchBadge match={match} />
               </div>
               <div className="flex flex-col md:flex-row gap-2 text-[.9rem] mt-1">
                 <div className="company">
