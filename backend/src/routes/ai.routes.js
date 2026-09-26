@@ -40,6 +40,7 @@ router.post(
     z.object({
       jobId: objectId,
       tone: z.enum(["professional", "enthusiastic", "concise"]).default("professional"),
+      lang: z.enum(["en", "bn"]).default("en"),
     })
   ),
   createCoverLetter

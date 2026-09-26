@@ -169,6 +169,31 @@ const clampLetter = (letter, max = 950) => {
   return (lastStop > max * 0.6 ? cut.slice(0, lastStop + 1) : cut).trim();
 };
 
+export const normalizeLang = (lang) => (lang === "bn" ? "bn" : "en");
+
+// Appended to prompts so the model answers in the reader's language.
+const languageInstruction = (lang) =>
+  lang === "bn" ? "\n\nWrite the entire answer in Bangla (বাংলা), using natural, polite Bangla. Keep skill names, tool names and company names in their original English spelling." : "";
+
+const templateCoverLetterBn = ({ candidate, job, companyName }) => {
+  const skills = (job.skills || []).filter((s) => (candidate.skills || []).some((c) => c.toLowerCase() === s.toLowerCase())).slice(0, 4);
+  const shown = skills.length ? skills : (candidate.skills || []).slice(0, 3);
+  const years = Number(candidate.yearsOfExperience) || 0;
+  const yearsBn = years.toLocaleString("bn-BD");
+  return clampLetter(
+    `প্রিয় ${companyName} নিয়োগ দল,\n\n` +
+      `আমি ${job.title} পদে আবেদন করতে পেরে আনন্দিত। ` +
+      (years ? `${yearsBn} বছরের অভিজ্ঞতা` : "আমার পেশাগত অভিজ্ঞতা") +
+      (candidate.primaryRole ? `, ${candidate.primaryRole} হিসেবে কাজের পটভূমি` : "") +
+      (shown.length ? ` এবং ${shown.join(", ")}-এ হাতেকলমে দক্ষতা নিয়ে` : " নিয়ে") +
+      ` আমি বিশ্বাস করি প্রথম দিন থেকেই আপনাদের দলে অবদান রাখতে পারব।\n\n` +
+      `আমি বাস্তব সমস্যার সমাধান করতে, দ্রুত শিখতে এবং দলের সাথে মিলেমিশে নির্ভরযোগ্য ফলাফল দিতে পছন্দ করি। ` +
+      `${companyName}-এর কাজ ঠিক সেই ধরনের পরিবেশ, যেখানে আমি নিজেকে আরও গড়ে তুলতে চাই।\n\n` +
+      `আপনার সময় ও বিবেচনার জন্য ধন্যবাদ। আপনাদের দলকে কীভাবে সহায়তা করতে পারি তা নিয়ে আলোচনার সুযোগ পেলে খুশি হব।\n\n` +
+      `বিনীত,\n${candidate.name || "আবেদনকারী"}`
+  );
+};
+
 const templateCoverLetter = ({ candidate, job, companyName }) => {
   const skills = (job.skills || []).filter((s) => (candidate.skills || []).some((c) => c.toLowerCase() === s.toLowerCase())).slice(0, 4);
   const shown = skills.length ? skills : (candidate.skills || []).slice(0, 3);
@@ -187,7 +212,8 @@ const templateCoverLetter = ({ candidate, job, companyName }) => {
   );
 };
 
-export const generateCoverLetter = async ({ candidate, job, companyName, tone = "professional" }) => {
+export const generateCoverLetter = async ({ candidate, job, companyName, tone = "professional", lang = "en" }) => {
+  lang = normalizeLang(lang);
   if (isAiConfigured() || completionOverride) {
     try {
       const reply = await complete({
@@ -207,14 +233,17 @@ Job: ${job.title} at ${companyName}
 Required skills: ${(job.skills || []).join(", ") || "not stated"}
 Job description: ${stripHtml(job.description).slice(0, 700)}
 
-Address it to the hiring team, highlight the skills that overlap with the job, and end with the candidate's name.`,
+Address it to the hiring team, highlight the skills that overlap with the job, and end with the candidate's name.${languageInstruction(lang)}`,
       });
       if (reply.length > 80) return { source: "ai", coverLetter: clampLetter(reply) };
     } catch (error) {
       console.error("[ai] cover letter failed, using template:", error.message);
     }
   }
-  return { source: "template", coverLetter: templateCoverLetter({ candidate, job, companyName }) };
+  return {
+    source: "template",
+    coverLetter: (lang === "bn" ? templateCoverLetterBn : templateCoverLetter)({ candidate, job, companyName }),
+  };
 };
 
 // ---- Interview preparation --------------------------------------------------------
@@ -226,6 +255,43 @@ const GENERIC_QUESTIONS = [
   { question: "What are your strengths, and what are you actively improving?", category: "behavioral", tip: "Pick a real weakness and show what you are doing about it." },
   { question: "Why do you want to work at this company?", category: "company", tip: "Reference the company's product, mission or recent news." },
 ];
+
+const GENERIC_QUESTIONS_BN = [
+  { question: "নিজের সম্পর্কে বলুন এবং এই পদে কেন আগ্রহী তা জানান।", category: "behavioral", tip: "৬০-৯০ সেকেন্ডে বলুন: বর্তমান, অতীত, তারপর এই চাকরিতে কেন।" },
+  { question: "সম্প্রতি সমাধান করা একটি কঠিন সমস্যার কথা বলুন। আপনার পদ্ধতি কী ছিল?", category: "behavioral", tip: "STAR পদ্ধতি ব্যবহার করুন: পরিস্থিতি, দায়িত্ব, পদক্ষেপ, ফলাফল।" },
+  { question: "দলে কাজ করার সময় মতবিরোধের একটি ঘটনা বলুন। আপনি কীভাবে সামলেছিলেন?", category: "behavioral", tip: "মনোযোগ দিয়ে শোনা, আপসের মনোভাব এবং ফলাফলের ওপর জোর দিন।" },
+  { question: "আপনার শক্তির দিক কী, আর কোন দিকটি এখন উন্নত করছেন?", category: "behavioral", tip: "একটি বাস্তব দুর্বলতা বেছে নিন এবং তা নিয়ে কী করছেন তা দেখান।" },
+  { question: "আপনি কেন এই কোম্পানিতে কাজ করতে চান?", category: "company", tip: "কোম্পানির পণ্য, লক্ষ্য বা সাম্প্রতিক খবরের উল্লেখ করুন।" },
+];
+
+const templatePrepBn = ({ candidate, job, companyName }) => {
+  const match = computeMatch(candidate, job);
+  const skillQuestions = (job.skills || []).slice(0, 4).map((skill) => ({
+    question: `আপনি কোনো বাস্তব প্রকল্পে ${skill} কীভাবে ব্যবহার করেছেন? কী ভালো হয়েছিল আর কী বদলাতেন?`,
+    category: "technical",
+    tip: `${skill} নিয়ে একটি নির্দিষ্ট উদাহরণ প্রস্তুত রাখুন: লক্ষ্য, আপনার ভূমিকা এবং পরিমাপযোগ্য ফলাফল।`,
+  }));
+  const gapQuestions = match.missingSkills.slice(0, 2).map((skill) => ({
+    question: `এই পদে ${skill} ব্যবহার হয়। আপনি কত দ্রুত এতে দক্ষ হয়ে উঠবেন?`,
+    category: "role",
+    tip: `${skill} আপনার প্রোফাইলে নেই। শেখার পরিকল্পনা এবং সংশ্লিষ্ট অভিজ্ঞতা তুলে ধরুন।`,
+  }));
+  return {
+    questions: [
+      ...skillQuestions,
+      ...gapQuestions,
+      { question: `${job.title} হিসেবে আপনার প্রথম ৯০ দিন কেমন হবে?`, category: "role", tip: "দেখান যে আগে শুনবেন, তারপর একটি ছোট দ্রুত সাফল্য এনে দেবেন।" },
+      ...GENERIC_QUESTIONS_BN,
+    ].slice(0, 10),
+    preparationTips: [
+      `${companyName} সম্পর্কে জানুন: পণ্য, গ্রাহক, প্রতিযোগী ও সাম্প্রতিক খবর।`,
+      "চাকরির বিবরণ আবার পড়ুন এবং প্রতিটি চাহিদার সাথে নিজের অভিজ্ঞতার একটি উদাহরণ মেলান।",
+      "ইন্টারভিউয়ারদের জিজ্ঞাসা করার জন্য ২-৩টি ভাবনাচিন্তার প্রশ্ন প্রস্তুত রাখুন।",
+      "অনলাইন ইন্টারভিউয়ের ১৫ মিনিট আগে ক্যামেরা, মাইক্রোফোন ও ইন্টারনেট পরীক্ষা করে নিন।",
+    ],
+    focusSkills: match.missingSkills.slice(0, 5),
+  };
+};
 
 const templatePrep = ({ candidate, job, companyName }) => {
   const match = computeMatch(candidate, job);
@@ -258,7 +324,8 @@ const templatePrep = ({ candidate, job, companyName }) => {
 
 const CATEGORIES = ["technical", "behavioral", "role", "company"];
 
-export const generateInterviewPrep = async ({ candidate, job, companyName }) => {
+export const generateInterviewPrep = async ({ candidate, job, companyName, lang = "en" }) => {
+  lang = normalizeLang(lang);
   if (isAiConfigured() || completionOverride) {
     try {
       const reply = await complete({
@@ -275,7 +342,7 @@ Required skills: ${(job.skills || []).join(", ") || "not stated"}
 Description: ${stripHtml(job.description).slice(0, 700)}
 
 Candidate skills: ${(candidate.skills || []).slice(0, 15).join(", ") || "not stated"}
-Candidate experience: ${candidate.yearsOfExperience || 0} years as ${candidate.primaryRole || "unspecified"}`,
+Candidate experience: ${candidate.yearsOfExperience || 0} years as ${candidate.primaryRole || "unspecified"}${languageInstruction(lang)}`,
       });
       const parsed = safeJson(reply);
       const questions = list(parsed?.questions, 10, (q) =>
@@ -295,5 +362,5 @@ Candidate experience: ${candidate.yearsOfExperience || 0} years as ${candidate.p
       console.error("[ai] interview prep failed, using template:", error.message);
     }
   }
-  return { source: "template", ...templatePrep({ candidate, job, companyName }) };
+  return { source: "template", ...(lang === "bn" ? templatePrepBn : templatePrep)({ candidate, job, companyName }) };
 };

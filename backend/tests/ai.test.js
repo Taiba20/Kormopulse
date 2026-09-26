@@ -314,6 +314,39 @@ describe("cover letters and interview prep", () => {
     assert.doesNotMatch(seenPrompt, /<b>/);
   });
 
+  it("writes the template letter and interview prep in Bangla when asked", async () => {
+    const letter = await env.api.post("/api/ai/cover-letter").set(env.auth(seeker.token)).send({ jobId: String(job._id), lang: "bn" });
+    assert.equal(letter.status, 200);
+    assert.equal(letter.body.data.source, "template");
+    assert.match(letter.body.data.coverLetter, /প্রিয় Letter Corp নিয়োগ দল/);
+    assert.match(letter.body.data.coverLetter, /Senior Node Engineer/);
+    assert.match(letter.body.data.coverLetter, /Lena Writer$/);
+    assert.ok(letter.body.data.coverLetter.length <= 950);
+
+    const prep = await env.api.get(`/api/ai/interview-prep/${job._id}?lang=bn`).set(env.auth(seeker.token));
+    assert.equal(prep.status, 200);
+    assert.ok(prep.body.data.questions.some((q) => /Node\.js/.test(q.question) && /[ঀ-৿]/.test(q.question)));
+    assert.ok(prep.body.data.preparationTips.some((t) => /Letter Corp/.test(t) && /[ঀ-৿]/.test(t)));
+
+    // Unknown languages fall back to English rather than failing
+    const fallback = await env.api.get(`/api/ai/interview-prep/${job._id}?lang=xx`).set(env.auth(seeker.token));
+    assert.equal(fallback.status, 200);
+    assert.ok(fallback.body.data.questions.some((q) => /How have you used Node\.js/.test(q.question)));
+  });
+
+  it("asks the model to answer in Bangla when the language is bn", async () => {
+    const prompts = [];
+    ai.setCompletionFn(async ({ user }) => {
+      prompts.push(user);
+      return "আপনার সময়ের জন্য ধন্যবাদ। ".repeat(20);
+    });
+    await env.api.post("/api/ai/cover-letter").set(env.auth(seeker.token)).send({ jobId: String(job._id), lang: "bn" });
+    await env.api.post("/api/ai/cover-letter").set(env.auth(seeker.token)).send({ jobId: String(job._id) });
+    ai.setCompletionFn(null);
+    assert.match(prompts[0], /Bangla/);
+    assert.doesNotMatch(prompts[1], /Bangla/);
+  });
+
   it("validates input and unknown jobs", async () => {
     assert.equal((await env.api.post("/api/ai/cover-letter").set(env.auth(seeker.token)).send({ jobId: "x" })).status, 400);
     assert.equal((await env.api.post("/api/ai/cover-letter").set(env.auth(seeker.token)).send({ jobId: String(job._id), tone: "rude" })).status, 400);

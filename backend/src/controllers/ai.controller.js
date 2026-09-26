@@ -12,6 +12,7 @@ import {
   sanitizeParsedProfile,
   generateCoverLetter,
   generateInterviewPrep,
+  normalizeLang,
   isAiConfigured,
 } from "../services/ai.service.js";
 
@@ -123,7 +124,7 @@ export const applyResumeData = asyncHandler(async (req, res) => {
 // ---- Cover letter ---------------------------------------------------------------
 
 export const createCoverLetter = asyncHandler(async (req, res) => {
-  const { jobId, tone } = req.body;
+  const { jobId, tone, lang } = req.body;
   const job = await Job.findById(jobId);
   if (!job) throw new ApiError(404, "Job not found");
 
@@ -133,6 +134,7 @@ export const createCoverLetter = asyncHandler(async (req, res) => {
     job,
     companyName: await getCompanyName(job),
     tone,
+    lang: normalizeLang(lang),
   });
 
   return res.status(200).json(new ApiResponse(200, result, "Cover letter drafted"));
@@ -149,6 +151,7 @@ export const getInterviewPrep = asyncHandler(async (req, res) => {
     candidate: aiCandidate(user),
     job,
     companyName: await getCompanyName(job),
+    lang: normalizeLang(req.query.lang),
   });
 
   return res.status(200).json(new ApiResponse(200, result, "Interview preparation ready"));
