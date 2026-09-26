@@ -13,7 +13,7 @@ const messageSchema = new Schema({
   },
   type: {
     type: String,
-    enum: ["chat_request", "application_update", "general"],
+    enum: ["chat_request", "application_update", "general", "response"],
     default: "general"
   },
   subject: {

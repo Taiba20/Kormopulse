@@ -21,9 +21,18 @@ const applicationSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "reviewed", "shortlisted", "rejected", "hired"],
+      enum: ["pending", "reviewed", "shortlisted", "interview", "rejected", "hired"],
       default: "pending",
     },
+    // Audit trail shown to the applicant as a timeline
+    statusHistory: [
+      {
+        status: { type: String },
+        changedAt: { type: Date, default: Date.now },
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        note: { type: String, maxlength: 500 },
+      },
+    ],
     appliedAt: {
       type: Date,
       default: Date.now,
