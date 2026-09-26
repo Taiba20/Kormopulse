@@ -11,7 +11,18 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.service.js";
 import { analyzeSkillGaps as analyzeSkillGapsAI } from "../utils/groqAi.service.js";
-import { sendPasswordResetCode } from "../utils/mail.service.js";
+import { sendPasswordResetCode, sendEmailVerificationCode } from "../utils/mail.service.js";
+import { notify } from "../utils/notify.js";
+import { verifyGoogleCredential } from "../utils/google.service.js";
+import {
+  OTP_TTL_MINUTES,
+  OTP_MAX_ATTEMPTS,
+  generateOtp,
+  hashOtp,
+  otpMatches,
+  otpExpiry,
+  isInResendCooldown,
+} from "../utils/otp.js";
 import crypto from "crypto";
 
 const cookieOptions = {
@@ -42,45 +53,62 @@ const generateAccessAndRefereshTokens = async (userId) => {
   }
 };
 
+// Issues a fresh email-verification code and emails it (mail failures are only logged).
+const issueEmailVerification = async (user) => {
+  const code = generateOtp();
+  user.emailVerificationCodeHash = hashOtp(user._id, code, "verify-email");
+  user.emailVerificationExpires = otpExpiry();
+  user.emailVerificationAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+  return sendVerificationEmail(user, code);
+};
+
+const sendVerificationEmail = (user, code) =>
+  sendEmailVerificationCode({
+    to: user.email,
+    name: user.name,
+    code,
+    expiresInMinutes: OTP_TTL_MINUTES,
+  });
+
+const setAuthCookies = (res, accessToken, refreshToken) =>
+  res
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions);
+
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body; // Added 'name' to destructuring
+  const { name, email, password, role } = req.body; // validated by zod: role is jobSeeker | employer
 
-  if ([name, email, password, role].some((field) => field?.trim() === "")) {
-    // Updated validation to include 'name'
-    throw new ApiError(400, "All fields are required");
-  }
-
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
     throw new ApiError(409, "User already exists");
   }
 
   const username = email.split("@")[0];
   const user = await User.create({
-    name, // Added 'name' field
+    name,
     email: email.toLowerCase(),
     username: username.toLowerCase(),
     password,
     role,
+    emailVerified: false,
   });
 
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+  issueEmailVerification(user).catch((error) =>
+    console.error("[verify-email] could not issue code:", error.message)
   );
+
+  const createdUser = await User.findById(user._id).select("-password -refreshToken");
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
-    createdUser._id
-  );
+  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(createdUser._id);
 
-  return res
-    .status(201)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(201, { user: createdUser, accessToken, refreshToken }, "User registered successfully")); // Updated to return 'user' object
+  return setAuthCookies(res.status(201), accessToken, refreshToken).json(
+    new ApiResponse(201, { user: createdUser, accessToken, refreshToken }, "User registered successfully")
+  );
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -105,6 +133,13 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
   }
+
+  if (user.isSuspended) {
+    throw new ApiError(403, "Your account has been suspended. Contact support for help.");
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save({ validateBeforeSave: false });
 
   const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
     user._id
@@ -509,23 +544,10 @@ const userPublicProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User profile fetch successful"));
 });
 
-const RESET_CODE_TTL_MINUTES = 10;
-const RESET_MAX_ATTEMPTS = 5;
-const RESET_RESEND_COOLDOWN_MS = 60 * 1000;
-
-const hashResetCode = (userId, code) =>
-  crypto
-    .createHmac("sha256", process.env.ACCESS_TOKEN_SECRET || "kormopulse")
-    .update(`${userId}:${code}`)
-    .digest("hex");
-
 // Step 1: email a 6-digit reset code. The response is identical whether or not
 // the account exists, so the endpoint cannot be used to discover registered emails.
 const forgotPassword = asyncHandler(async (req, res) => {
-  const email = req.body?.email?.trim().toLowerCase();
-  if (!email) {
-    throw new ApiError(400, "Email is required");
-  }
+  const email = req.body.email.trim().toLowerCase();
 
   const genericResponse = new ApiResponse(
     200,
@@ -539,16 +561,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 
   // Ignore repeat requests made within the cooldown window
-  const issuedAt = user.passwordResetExpires
-    ? user.passwordResetExpires.getTime() - RESET_CODE_TTL_MINUTES * 60 * 1000
-    : 0;
-  if (Date.now() - issuedAt < RESET_RESEND_COOLDOWN_MS) {
+  if (isInResendCooldown(user.passwordResetExpires)) {
     return res.status(200).json(genericResponse);
   }
 
-  const code = crypto.randomInt(0, 1000000).toString().padStart(6, "0");
-  user.passwordResetCodeHash = hashResetCode(user._id, code);
-  user.passwordResetExpires = new Date(Date.now() + RESET_CODE_TTL_MINUTES * 60 * 1000);
+  const code = generateOtp();
+  user.passwordResetCodeHash = hashOtp(user._id, code, "password-reset");
+  user.passwordResetExpires = otpExpiry();
   user.passwordResetAttempts = 0;
   await user.save({ validateBeforeSave: false });
 
@@ -556,7 +575,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     to: user.email,
     name: user.name,
     code,
-    expiresInMinutes: RESET_CODE_TTL_MINUTES,
+    expiresInMinutes: OTP_TTL_MINUTES,
   });
 
   return res.status(200).json(genericResponse);
@@ -564,17 +583,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
 // Step 2: verify the emailed code and set the new password.
 const resetPassword = asyncHandler(async (req, res) => {
-  const { email, code, password, confirmPassword } = req.body || {};
-
-  if (!email || !code || !password || !confirmPassword) {
-    throw new ApiError(400, "Email, code, password, and confirm password are required");
-  }
-  if (password !== confirmPassword) {
-    throw new ApiError(400, "Passwords do not match");
-  }
-  if (password.length < 6) {
-    throw new ApiError(400, "Password must be at least 6 characters long");
-  }
+  const { email, code, password } = req.body; // shape validated by zod
 
   const user = await User.findOne({ email: email.trim().toLowerCase() }).select(
     "+passwordResetCodeHash +passwordResetExpires +passwordResetAttempts"
@@ -584,13 +593,11 @@ const resetPassword = asyncHandler(async (req, res) => {
   if (!user || !user.passwordResetCodeHash || !user.passwordResetExpires) {
     throw invalid;
   }
-  if (user.passwordResetExpires.getTime() < Date.now() || user.passwordResetAttempts >= RESET_MAX_ATTEMPTS) {
+  if (user.passwordResetExpires.getTime() < Date.now() || user.passwordResetAttempts >= OTP_MAX_ATTEMPTS) {
     throw invalid;
   }
 
-  const expected = Buffer.from(user.passwordResetCodeHash, "hex");
-  const provided = Buffer.from(hashResetCode(user._id, String(code).trim()), "hex");
-  if (expected.length !== provided.length || !crypto.timingSafeEqual(expected, provided)) {
+  if (!otpMatches(user.passwordResetCodeHash, user._id, code, "password-reset")) {
     user.passwordResetAttempts += 1;
     await user.save({ validateBeforeSave: false });
     throw invalid;
@@ -604,6 +611,117 @@ const resetPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   return res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"));
+});
+
+// ---- Email verification ---------------------------------------------------
+
+const verifyEmail = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    "+emailVerificationCodeHash +emailVerificationExpires +emailVerificationAttempts"
+  );
+
+  if (user.emailVerified !== false) {
+    return res.status(200).json(new ApiResponse(200, { emailVerified: true }, "Email already verified"));
+  }
+
+  const invalid = new ApiError(400, "Invalid or expired code");
+  if (!user.emailVerificationCodeHash || !user.emailVerificationExpires) throw invalid;
+  if (user.emailVerificationExpires.getTime() < Date.now() || user.emailVerificationAttempts >= OTP_MAX_ATTEMPTS) {
+    throw invalid;
+  }
+
+  if (!otpMatches(user.emailVerificationCodeHash, user._id, req.body.code, "verify-email")) {
+    user.emailVerificationAttempts += 1;
+    await user.save({ validateBeforeSave: false });
+    throw invalid;
+  }
+
+  user.emailVerified = true;
+  user.emailVerificationCodeHash = undefined;
+  user.emailVerificationExpires = undefined;
+  user.emailVerificationAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  void notify(user._id, {
+    type: "system",
+    title: "Email verified",
+    message: "Your email address is verified. You now have full access to Kormopulse.",
+  });
+
+  return res.status(200).json(new ApiResponse(200, { emailVerified: true }, "Email verified successfully"));
+});
+
+const resendVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("+emailVerificationExpires");
+
+  if (user.emailVerified !== false) {
+    return res.status(200).json(new ApiResponse(200, { emailVerified: true }, "Email already verified"));
+  }
+  if (isInResendCooldown(user.emailVerificationExpires)) {
+    throw new ApiError(429, "A code was sent moments ago. Please wait a minute before requesting another.");
+  }
+
+  await issueEmailVerification(user);
+  return res.status(200).json(new ApiResponse(200, {}, "Verification code sent"));
+});
+
+// ---- Google sign-in ---------------------------------------------------------
+
+const googleLogin = asyncHandler(async (req, res) => {
+  const { credential, role } = req.body;
+
+  let profile;
+  try {
+    profile = await verifyGoogleCredential(credential);
+  } catch (error) {
+    throw new ApiError(401, error.message || "Google sign-in failed");
+  }
+
+  if (!profile.emailVerified) {
+    throw new ApiError(401, "Your Google email address is not verified");
+  }
+
+  let user = await User.findOne({ email: profile.email.toLowerCase() });
+
+  if (!user) {
+    // First visit: we need to know whether this is a job seeker or an employer
+    if (!role) {
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          { needsRole: true, profile: { email: profile.email, name: profile.name, picture: profile.picture } },
+          "Choose an account type to finish signing up"
+        )
+      );
+    }
+
+    user = await User.create({
+      name: profile.name || profile.email.split("@")[0],
+      email: profile.email.toLowerCase(),
+      username: profile.email.split("@")[0].toLowerCase(),
+      // Google accounts never use a password, but the schema requires one
+      password: crypto.randomBytes(32).toString("hex"),
+      role,
+      emailVerified: true,
+      googleId: profile.sub,
+    });
+  } else {
+    if (user.isSuspended) {
+      throw new ApiError(403, "Your account has been suspended. Contact support for help.");
+    }
+    if (!user.googleId) user.googleId = profile.sub;
+    if (user.emailVerified === false) user.emailVerified = true; // Google already verified it
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(user._id);
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+  return setAuthCookies(res.status(200), accessToken, refreshToken).json(
+    new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "Google sign-in successful")
+  );
 });
 
 export { 
@@ -625,5 +743,8 @@ export {
   analyzeSkillGap,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyEmail,
+  resendVerification,
+  googleLogin
 };

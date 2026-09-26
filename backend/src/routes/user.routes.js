@@ -19,16 +19,29 @@ import {
   changePassword,
   forgotPassword,
   resetPassword,
+  verifyEmail,
+  resendVerification,
+  googleLogin,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import { authLimiter } from "../middlewares/rateLimit.middleware.js";
+import {
+  signupSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+  googleLoginSchema,
+} from "../validators/auth.schemas.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router.route("/ping").get(ping);
 router.route("/auth-ping").get(verifyJWT, authPing);
-router.route("/signup").post(registerUser);
-router.route("/login").post(loginUser);
+router.route("/signup").post(authLimiter, validate(signupSchema), registerUser);
+router.route("/login").post(authLimiter, validate(loginSchema), loginUser);
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/update-profile").put(verifyJWT, updateUserProfile);
@@ -44,7 +57,10 @@ router.route("/saved-jobs").get(verifyJWT, getSavedJobs);
 router.route("/public-profile/:id").get(userPublicProfile);
 router.route("/skill-gap/:jobId").get(verifyJWT, analyzeSkillGap);
 router.route("/change-password").post(verifyJWT, changePassword);
-router.route("/forgot-password").post(forgotPassword);
-router.route("/reset-password").post(resetPassword);
+router.route("/forgot-password").post(authLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.route("/reset-password").post(authLimiter, validate(resetPasswordSchema), resetPassword);
+router.route("/verify-email").post(authLimiter, verifyJWT, validate(verifyEmailSchema), verifyEmail);
+router.route("/resend-verification").post(authLimiter, verifyJWT, resendVerification);
+router.route("/google").post(authLimiter, validate(googleLoginSchema), googleLogin);
 
 export default router;
