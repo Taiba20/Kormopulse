@@ -5,8 +5,10 @@ import { contentService } from "../services/contentService";
 import { useParams } from "react-router-dom";
 import JobDescription from "../components/JobDetails/JobDescription";
 import DisclaimerBanner from "../components/Common/DisclaimerBanner";
+import { useI18n } from "../i18n/I18nContext";
 
 function JobDetails() {
+  const { t, tError } = useI18n();
   const [jobData, setJobData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,7 +16,7 @@ function JobDetails() {
   
   const getDetails = async (id) => {
     if (!id) {
-      setError("Job ID is required");
+      setError(t("jobs.details.idRequired"));
       setLoading(false);
       return;
     }
@@ -33,11 +35,11 @@ function JobDetails() {
         // Handle direct response without .data wrapper
         setJobData(res);
       } else {
-        setError("No job data received");
+        setError(t("jobs.details.noData"));
       }
     } catch (error) {
       console.error('Error fetching job details:', error);
-      setError(error.response?.data?.message || "Failed to fetch job details");
+      setError(tError(error, "jobs.details.fetchFailed"));
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ function JobDetails() {
         <div className="px-5 md:px-10 flex justify-center items-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-lg text-neutral-600">Loading job details...</p>
+            <p className="text-lg text-neutral-600">{t("jobs.details.loading")}</p>
           </div>
         </div>
       </div>
@@ -71,14 +73,14 @@ function JobDetails() {
           <div className="text-center">
             <div className="text-error text-lg mb-4">
               <i className="fas fa-exclamation-triangle mr-2"></i>
-              Error Loading Job
+              {t("jobs.details.errorTitle")}
             </div>
             <p className="text-neutral-600 mb-4">{error}</p>
             <button 
               onClick={() => getDetails(id)}
               className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
             >
-              Try Again
+              {t("jobs.details.tryAgain")}
             </button>
           </div>
         </div>

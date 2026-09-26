@@ -1,7 +1,9 @@
 import React from "react";
 import styles from "./JobDescription.module.css";
+import { useI18n } from "../../i18n/I18nContext";
 
 function JobDescription({ jobData }) {
+  const { t } = useI18n();
   const { description, skills } = jobData;
   return (
     <div className="border border-neutral-200 bg-background p-5 rounded-3xl shadow-md mb-10">
@@ -11,7 +13,7 @@ function JobDescription({ jobData }) {
       />
 
       <div className="py-2">
-        <h3 className="font-medium text-text-primary">Key Skills</h3>
+        <h3 className="font-medium text-text-primary">{t("jobs.details.keySkills")}</h3>
         <div className="flex flex-wrap gap-2 mt-2">
           {skills?.map((skill, index) => (
             <span

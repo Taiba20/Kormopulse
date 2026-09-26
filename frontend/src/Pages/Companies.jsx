@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { contentService } from "../services/contentService";
+import { useI18n } from "../i18n/I18nContext";
 
 function Companies() {
+  const { t, tError, formatNumber } = useI18n();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,7 +43,7 @@ function Companies() {
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to fetch companies');
+      setError(error.response?.data?.message ? tError(error) : t('companies.fetchFailed'));
       setCompanies([]);
     } finally {
       setLoading(false);
@@ -64,12 +66,12 @@ function Companies() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-error">Error loading companies: {error}</p>
+        <p className="text-error">{t("companies.errorLoading", { error })}</p>
         <button 
           onClick={fetchCompanies}
           className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
         >
-          Try Again
+          {t("companies.tryAgain")}
         </button>
       </div>
     );
@@ -79,22 +81,22 @@ function Companies() {
     <div className="pt-16"> {/* Add padding-top to account for fixed navbar */}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Companies</h1>
-          <p className="text-neutral-600">Discover companies that are actively hiring</p>
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">{t("companies.title")}</h1>
+          <p className="text-neutral-600">{t("companies.subtitle")}</p>
         </div>
 
       {companies.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-neutral-500 mb-4">
             <i className="fas fa-building text-6xl mb-4"></i>
-            <p className="text-xl">No companies found</p>
-            <p className="text-sm">Companies will appear here once they complete their onboarding.</p>
+            <p className="text-xl">{t("companies.none")}</p>
+            <p className="text-sm">{t("companies.noneSub")}</p>
           </div>
         </div>
       ) : (
         <>
           <div className="mb-6">
-            <p className="text-neutral-600">{companies.length} companies found</p>
+            <p className="text-neutral-600">{t("companies.found", { count: companies.length })}</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,7 +111,7 @@ function Companies() {
                     {company.companyLogo ? (
                       <img
                         src={company.companyLogo}
-                        alt={`${company.companyName} logo`}
+                        alt=""
                         className="w-16 h-16 rounded-lg object-cover"
                       />
                     ) : (
@@ -130,19 +132,19 @@ function Companies() {
                     
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-neutral-500">
-                        {company.jobCount || 0} active jobs
+                        {t("companies.activeJobs", { n: formatNumber(company.jobCount || 0) })}
                       </div>
 
                       {company.rating?.count > 0 && (
                         <div className="text-sm text-warning flex items-center gap-1">
                           <i className="fas fa-star"></i>
-                          {company.rating.average} <span className="text-neutral-400">({company.rating.count})</span>
+                          {formatNumber(company.rating.average)} <span className="text-neutral-400">({formatNumber(company.rating.count)})</span>
                         </div>
                       )}
 
                       {company.companySize && (
                         <div className="text-sm text-neutral-500">
-                          {company.companySize.from}-{company.companySize.to} employees
+                          {t("companies.employees", { from: formatNumber(Number(company.companySize.from) || 0), to: formatNumber(Number(company.companySize.to) || 0) })}
                         </div>
                       )}
                     </div>
@@ -157,7 +159,7 @@ function Companies() {
                     {company.companyWebsite && (
                       <div className="text-sm text-primary mt-2">
                         <i className="fas fa-external-link-alt mr-1"></i>
-                        Website
+                        {t("companies.website")}
                       </div>
                     )}
 
@@ -168,7 +170,7 @@ function Companies() {
                       }}
                       className="text-sm text-primary hover:underline mt-2"
                     >
-                      View profile &amp; reviews
+                      {t("companies.viewProfile")}
                     </button>
                   </div>
                 </div>

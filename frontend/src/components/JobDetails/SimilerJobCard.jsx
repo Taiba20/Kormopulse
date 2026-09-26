@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../i18n/I18nContext";
 
 function SimilerJobCard({ jobData }) {
   const navigate = useNavigate();
+  const { t, timeAgo: formatTimeAgo } = useI18n();
 
   if (!jobData) {
     return null;
@@ -16,21 +18,9 @@ function SimilerJobCard({ jobData }) {
     createdAt
   } = jobData;
 
-  // Calculate time ago
-  const datePosted = new Date(createdAt);
-  const now = new Date();
-  const diffTime = Math.abs(now - datePosted);
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const timeAgo = formatTimeAgo(createdAt);
 
-  let timeAgo = "Just now";
-  if (diffHours < 24) {
-    timeAgo = diffHours > 0 ? `${diffHours} hours ago` : "Just now";
-  } else {
-    timeAgo = `${diffDays} days ago`;
-  }
-
-  const companyName = company?.companyName || "Company Name Not Available";
+  const companyName = company?.companyName || t("jobs.companyUnavailable");
   const companyLogo = company?.companyLogo || "https://via.placeholder.com/56x56?text=C";
 
   const handleJobClick = () => {
@@ -58,7 +48,7 @@ function SimilerJobCard({ jobData }) {
                 <span className="text-primary">
                   <i className="fa-solid fa-location-dot"></i>
                 </span>
-                <span className="line-clamp-1">{location || "Location not specified"}</span>
+                <span className="line-clamp-1">{location || t("jobs.similar.location")}</span>
               </div>
             </div>
           </div>
@@ -67,7 +57,7 @@ function SimilerJobCard({ jobData }) {
           <div className="h-14 w-14 rounded-3xl border border-neutral-200 overflow-hidden flex justify-center items-center bg-background-secondary">
             <img 
               src={companyLogo} 
-              alt={`${companyName} logo`}
+              alt=""
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.src = "https://via.placeholder.com/56x56?text=C";
@@ -75,7 +65,7 @@ function SimilerJobCard({ jobData }) {
             />
           </div>
           <div>
-            <span className="text-xs font-light text-text-muted">Posted {timeAgo}</span>
+            <span className="text-xs font-light text-text-muted">{t("jobs.similar.posted", { time: timeAgo })}</span>
           </div>
         </div>
       </div>

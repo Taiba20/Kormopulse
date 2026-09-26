@@ -9,8 +9,12 @@ import SkillsSearch from "../components/Common/SkillsSearch";
 import TextEditor from "../components/Common/FormComponents/TextEditor";
 import { useNavigate } from "react-router-dom";
 import { companyService } from "../services/companyService";
+import { useI18n } from "../i18n/I18nContext";
+import { JOB_ROLE_GROUPS } from "../data/jobRoles";
 
 function JobPosting() {
+  const { t, tError } = useI18n();
+  const [roleValue, setRoleValue] = useState("");
   const [selectedSkills, setSelectedSkills] = useState(new Map());
   const [generatingDescription, setGeneratingDescription] = useState(null);
 
@@ -55,7 +59,11 @@ function JobPosting() {
     const { name, value } = e.target;
     console.log('Input change:', name, value);
     
-    if (name === 'experience') {
+    if (name === 'category') {
+      // value is "category::roleId": the API only stores the category, the select remembers the role
+      setRoleValue(value);
+      setFormData((prevData) => ({ ...prevData, category: value.split("::")[0] }));
+    } else if (name === 'experience') {
       const selectedOption = experienceOptions.find(option => option.value === value);
       if (selectedOption) {
         setFormData((prevData) => ({
@@ -103,36 +111,36 @@ function JobPosting() {
     const newErrors = {};
     
     if (!formData.title.trim()) {
-      newErrors.title = "Job title is required";
+      newErrors.title = t("posting.errors.title");
     }
     
     if (!formData.jobType || formData.jobType === "default") {
-      newErrors.jobType = "Please select a job type";
+      newErrors.jobType = t("posting.errors.type");
     }
     
     if (!formData.category) {
-      newErrors.category = "Please select a primary role";
+      newErrors.category = t("posting.errors.role");
     }
     
     if (!formData.experience || formData.experience.min === undefined) {
-      newErrors.experience = "Please select years of experience";
+      newErrors.experience = t("posting.errors.experience");
     }
     
     if (selectedSkills.size === 0) {
-      newErrors.skills = "At least one skill is required";
+      newErrors.skills = t("posting.errors.skills");
     }
     
     if (!formData.applicationDeadline) {
-      newErrors.applicationDeadline = "Application deadline is required";
+      newErrors.applicationDeadline = t("posting.errors.deadline");
     }
     
     if (!formData.workMode) {
-      newErrors.workMode = "Please select a work mode";
+      newErrors.workMode = t("posting.errors.workMode");
     }
     
     // Validate salary range
     if (formData.salary.min > 0 && formData.salary.max > 0 && formData.salary.min >= formData.salary.max) {
-      newErrors.salary = "Maximum salary must be greater than minimum salary";
+      newErrors.salary = t("posting.errors.salary");
     }
     
     setErrors(newErrors);
@@ -163,12 +171,9 @@ function JobPosting() {
       delete jobData.urgent;
     }
 
-    // Check required fields (only 'title' is needed for AI generation)
-    const requiredFields = ['title'];
-    const missingFields = requiredFields.filter(field => !jobData[field]);
-    
-    if (missingFields.length > 0) {
-      alert(`Incomplete Form: Please fill the following required fields: ${missingFields.join(', ')}`);
+    // Only the title is needed for AI generation
+    if (!jobData.title) {
+      alert(t("posting.generateNeedsTitle"));
       return;
     }
     
@@ -182,11 +187,11 @@ function JobPosting() {
         setFormData(prev => ({ ...prev, description: res }));
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message;
+      const errorMessage = tError(error) || error.message;
       if (errorMessage.includes("Quota exceeded")) {
-        alert("Quota Exceeded: You reached the limit for free job description generations. An upgrade to the plan is required to continue using this feature.");
+        alert(t("posting.quota"));
       } else {
-        alert(`Error generating job description: ${errorMessage}`);
+        alert(t("posting.generateFailed", { message: errorMessage }));
       }
       setGeneratingDescription(false);
     }
@@ -201,7 +206,7 @@ function JobPosting() {
     const validation = validateForm();
     if (!validation.isValid) {
       const errorMessages = Object.values(validation.errors).join('\n• ');
-      alert(`Please fix the following errors before submitting:\n\n• ${errorMessages}`);
+      alert(`${t("posting.fixErrors")}\n\n• ${errorMessages}`);
       return;
     }
     
@@ -249,235 +254,64 @@ function JobPosting() {
       console.log('Job posting response:', response);
       
       // Use browser alert instead of Dialogbox
-      alert("Job Posting Successful! Your job posting has been submitted successfully.");
+      alert(t("posting.success"));
       navigate("/jobs");
     } catch (error) {
       console.error('Job posting error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to post job';
+      const errorMessage = tError(error) || error.message || t('posting.postFailedDefault');
       
       // Use browser alert instead of Dialogbox
-      alert(`Error Posting Job: ${errorMessage}`);
+      alert(t("posting.postFailed", { message: errorMessage }));
     }
     setSubmitting(false);
   };
 
   const jobTypeOptions = [
-    { value: "default", label: "Select Job Type" },
-    { value: "full-time", label: "Full-time" },
-    { value: "part-time", label: "Part-time" },
-    { value: "internship", label: "Internship" },
-    { value: "freelance", label: "Freelance" },
-    { value: "contract", label: "Contract" },
+    { value: "default", label: t("posting.selectType") },
+    { value: "full-time", label: t("enums.jobType.full-time") },
+    { value: "part-time", label: t("enums.jobType.part-time") },
+    { value: "internship", label: t("enums.jobType.internship") },
+    { value: "freelance", label: t("enums.jobType.freelance") },
+    { value: "contract", label: t("enums.jobType.contract") },
   ];
 
-  const roleOptions = [
-    {
-      label: "Technology",
-      options: [
-        { value: "software-development", label: "Software Engineer" },
-        { value: "software-development", label: "Frontend Developer" },
-        { value: "software-development", label: "Backend Developer" },
-        { value: "software-development", label: "Full Stack Developer" },
-        { value: "software-development", label: "Mobile App Developer" },
-        { value: "software-development", label: "DevOps Engineer" },
-        { value: "software-development", label: "QA Engineer" },
-        { value: "software-development", label: "System Administrator" },
-        { value: "data-science", label: "Data Scientist" },
-        { value: "data-science", label: "Data Analyst" },
-        { value: "data-science", label: "Machine Learning Engineer" },
-        { value: "data-science", label: "AI Engineer" },
-        { value: "technology", label: "Product Manager" },
-        { value: "technology", label: "Technical Lead" },
-        { value: "technology", label: "CTO" },
-        { value: "technology", label: "IT Support Specialist" },
-        { value: "technology", label: "Cybersecurity Analyst" },
-        { value: "technology", label: "Network Engineer" },
-        { value: "technology", label: "Database Administrator" },
-        { value: "technology", label: "Cloud Architect" },
-        { value: "technology", label: "Blockchain Developer" },
-        { value: "technology", label: "Game Developer" },
-        { value: "technology", label: "Embedded Systems Engineer" },
-      ],
-    },
-    {
-      label: "Design & Creative",
-      options: [
-        { value: "design", label: "UI/UX Designer" },
-        { value: "design", label: "Graphic Designer" },
-        { value: "design", label: "Product Designer" },
-        { value: "design", label: "UX Researcher" },
-        { value: "design", label: "Visual Designer" },
-        { value: "design", label: "Creative Director" },
-        { value: "design", label: "Art Director" },
-        { value: "design", label: "Brand Designer" },
-        { value: "design", label: "Motion Graphics Designer" },
-        { value: "design", label: "Illustrator" },
-      ],
-    },
-    {
-      label: "Marketing & Sales",
-      options: [
-        { value: "marketing", label: "Marketing Manager" },
-        { value: "marketing", label: "Digital Marketing Specialist" },
-        { value: "marketing", label: "Content Marketing Manager" },
-        { value: "marketing", label: "SEO Specialist" },
-        { value: "marketing", label: "Social Media Manager" },
-        { value: "marketing", label: "Marketing Analyst" },
-        { value: "marketing", label: "Brand Manager" },
-        { value: "marketing", label: "Public Relations Specialist" },
-        { value: "marketing", label: "Email Marketing Specialist" },
-        { value: "marketing", label: "Growth Hacker" },
-        { value: "sales", label: "Sales Representative" },
-        { value: "sales", label: "Sales Manager" },
-        { value: "sales", label: "Business Development Manager" },
-        { value: "sales", label: "Account Executive" },
-        { value: "sales", label: "Sales Engineer" },
-        { value: "sales", label: "Customer Success Manager" },
-        { value: "sales", label: "Sales Operations Manager" },
-        { value: "sales", label: "Channel Sales Manager" },
-        { value: "sales", label: "Territory Sales Manager" },
-        { value: "sales", label: "Inside Sales Representative" },
-      ],
-    },
-    {
-      label: "Finance & Business",
-      options: [
-        { value: "finance", label: "Financial Analyst" },
-        { value: "finance", label: "Accountant" },
-        { value: "finance", label: "Financial Planner" },
-        { value: "finance", label: "Investment Banker" },
-        { value: "finance", label: "Financial Controller" },
-        { value: "finance", label: "Treasury Analyst" },
-        { value: "finance", label: "Risk Analyst" },
-        { value: "finance", label: "Financial Advisor" },
-        { value: "finance", label: "Auditor" },
-        { value: "finance", label: "Tax Specialist" },
-        { value: "consulting", label: "Business Analyst" },
-        { value: "consulting", label: "Management Consultant" },
-        { value: "consulting", label: "Strategy Consultant" },
-        { value: "consulting", label: "Financial Consultant" },
-      ],
-    },
-    {
-      label: "Human Resources & Operations",
-      options: [
-        { value: "human-resources", label: "HR Manager" },
-        { value: "human-resources", label: "Recruiter" },
-        { value: "human-resources", label: "Talent Acquisition Specialist" },
-        { value: "human-resources", label: "HR Business Partner" },
-        { value: "human-resources", label: "Training Coordinator" },
-        { value: "human-resources", label: "Employee Relations Specialist" },
-        { value: "human-resources", label: "Compensation Analyst" },
-        { value: "human-resources", label: "Benefits Administrator" },
-        { value: "human-resources", label: "HR Generalist" },
-        { value: "human-resources", label: "People Operations Manager" },
-        { value: "operations", label: "Operations Manager" },
-        { value: "operations", label: "Project Manager" },
-        { value: "operations", label: "Program Manager" },
-        { value: "operations", label: "Supply Chain Manager" },
-        { value: "operations", label: "Logistics Coordinator" },
-        { value: "operations", label: "Quality Assurance Manager" },
-        { value: "operations", label: "Process Improvement Specialist" },
-        { value: "operations", label: "Operations Analyst" },
-        { value: "operations", label: "Facility Manager" },
-        { value: "operations", label: "Vendor Manager" },
-      ],
-    },
-    {
-      label: "Customer Service",
-      options: [
-        { value: "customer-service", label: "Customer Service Representative" },
-        { value: "customer-service", label: "Customer Support Specialist" },
-        { value: "customer-service", label: "Technical Support Engineer" },
-        { value: "customer-service", label: "Customer Success Specialist" },
-        { value: "customer-service", label: "Client Services Manager" },
-        { value: "customer-service", label: "Help Desk Technician" },
-        { value: "customer-service", label: "Customer Experience Manager" },
-        { value: "customer-service", label: "Support Operations Manager" },
-        { value: "customer-service", label: "Account Manager" },
-        { value: "customer-service", label: "Relationship Manager" },
-      ],
-    },
-    {
-      label: "Healthcare & Education",
-      options: [
-        { value: "healthcare", label: "Registered Nurse" },
-        { value: "healthcare", label: "Physician" },
-        { value: "healthcare", label: "Pharmacist" },
-        { value: "healthcare", label: "Physical Therapist" },
-        { value: "healthcare", label: "Medical Laboratory Scientist" },
-        { value: "healthcare", label: "Radiologic Technologist" },
-        { value: "healthcare", label: "Occupational Therapist" },
-        { value: "healthcare", label: "Healthcare Administrator" },
-        { value: "healthcare", label: "Medical Assistant" },
-        { value: "healthcare", label: "Nurse Practitioner" },
-        { value: "education", label: "Teacher" },
-        { value: "education", label: "Professor" },
-        { value: "education", label: "School Counselor" },
-        { value: "education", label: "Curriculum Developer" },
-        { value: "education", label: "Educational Administrator" },
-        { value: "education", label: "Instructional Designer" },
-        { value: "education", label: "Librarian" },
-        { value: "education", label: "Education Consultant" },
-        { value: "education", label: "Training Specialist" },
-        { value: "education", label: "Academic Advisor" },
-      ],
-    },
-    {
-      label: "Engineering & Consulting",
-      options: [
-        { value: "engineering", label: "Mechanical Engineer" },
-        { value: "engineering", label: "Electrical Engineer" },
-        { value: "engineering", label: "Civil Engineer" },
-        { value: "engineering", label: "Chemical Engineer" },
-        { value: "engineering", label: "Aerospace Engineer" },
-        { value: "engineering", label: "Biomedical Engineer" },
-        { value: "engineering", label: "Environmental Engineer" },
-        { value: "engineering", label: "Industrial Engineer" },
-        { value: "engineering", label: "Materials Engineer" },
-        { value: "engineering", label: "Structural Engineer" },
-        { value: "consulting", label: "IT Consultant" },
-        { value: "consulting", label: "Technical Consultant" },
-        { value: "consulting", label: "Process Consultant" },
-        { value: "consulting", label: "Change Management Consultant" },
-        { value: "consulting", label: "Legal Consultant" },
-      ],
-    },
-    {
-      label: "Other",
-      options: [
-        { value: "other", label: "Other" },
-      ],
-    },
-  ];
+  // Several roles share one API category, so each <option> needs its own value ("category::roleId");
+  // with duplicate values a controlled <select> always displays the first role of that category.
+  const roleOptions = JOB_ROLE_GROUPS.map((group) => ({
+    label: t(`jobRoleGroups.${group.key}`),
+    options: group.roles.map((role) => ({
+      value: `${role.category}::${role.id}`,
+      label: t(`jobRoles.${role.id}`),
+    })),
+  }));
 
   const experienceOptions = [
-    { value: "0", label: "Less than 1 year", min: 0, max: 1 },
-    { value: "1", label: "1 year", min: 1, max: 2 },
-    { value: "2", label: "2 years", min: 2, max: 3 },
-    { value: "3", label: "3 years", min: 3, max: 5 },
-    { value: "4", label: "4 years", min: 4, max: 6 },
-    { value: "5", label: "5 years", min: 5, max: 8 },
-    { value: "6", label: "More than 5 years", min: 5, max: 10 },
+    { value: "0", label: t("profile.experienceOptions.0"), min: 0, max: 1 },
+    { value: "1", label: t("profile.experienceOptions.1"), min: 1, max: 2 },
+    { value: "2", label: t("profile.experienceOptions.2"), min: 2, max: 3 },
+    { value: "3", label: t("profile.experienceOptions.3"), min: 3, max: 5 },
+    { value: "4", label: t("profile.experienceOptions.4"), min: 4, max: 6 },
+    { value: "5", label: t("profile.experienceOptions.5"), min: 5, max: 8 },
+    { value: "6", label: t("profile.experienceOptions.6"), min: 5, max: 10 },
   ];
 
   return (
     <div className="py-3 px-2 md:px-8 lg:px-20 pt-20">
       <div className="my-5">
-        <h2 className="font-semibold text-2xl">New Job Posting</h2>
+        <h2 className="font-semibold text-2xl">{t("posting.title")}</h2>
       </div>
       <div className="border rounded">
         <div className="p-3 font-medium text-lg px-5 border-b">
-          1. Job Details
+          {t("posting.section1")}
         </div>
         <div className="p-5">
           <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
             <div>
               <InputField
-                label="Title"
-                description="Enter the title of the job position you are posting."
+                label={t("posting.titleLabel")}
+                description={t("posting.titleDesc")}
                 isRequired={true}
-                placeholder="E.g., 'Software Engineer', 'Product Designer', etc."
+                placeholder={t("posting.titlePlaceholder")}
                 id="title"
                 name="title"
                 onChange={handleInputChange}
@@ -487,8 +321,8 @@ function JobPosting() {
 
             <div>
               <SelectInput
-                label="Type of position"
-                description="Select the type of position you are offering."
+                label={t("posting.typeLabel")}
+                description={t("posting.typeDesc")}
                 isRequired={true}
                 id="jobType"
                 name="jobType"
@@ -501,13 +335,13 @@ function JobPosting() {
 
             <div>
               <SelectInput
-                label="Select your primary role"
-                description="Select the primary role that the candidate will be expected to perform."
+                label={t("posting.roleLabel")}
+                description={t("posting.roleDesc")}
                 id="category"
                 name="category"
-                value={formData.category}
+                value={roleValue}
                 options={roleOptions}
-                placeholder="Select a primary role"
+                placeholder={t("posting.rolePlaceholder")}
                 isRequired={true}
                 optgroup={true}
                 onChange={handleInputChange}
@@ -517,15 +351,15 @@ function JobPosting() {
 
             <div>
               <SelectInput
-                label="Years of experience"
-                description="Select the minimum years of experience required for the position."
+                label={t("posting.expLabel")}
+                description={t("posting.expDesc")}
                 id="experience"
                 name="experience"
                 value={experienceOptions.find(option => 
                   option.min === formData.experience.min && option.max === formData.experience.max
                 )?.value || ""}
                 options={experienceOptions}
-                placeholder="Select years of experience"
+                placeholder={t("posting.expPlaceholder")}
                 isRequired={true}
                 onChange={handleInputChange}
                 error={errors.experience}
@@ -535,14 +369,13 @@ function JobPosting() {
             <div>
               <label className="font-medium flex gap-2">
                 <span>
-                  Skills
+                  {t("posting.skills")}
                   <span className="text-text-secondary">*</span>
                 </span>
               </label>
 
               <span className="text-text-secondary text-sm ml-1.5 ">
-                Input job's required skills from the dropdown in the 'Skills'
-                field.
+                {t("posting.skillsHint")}
               </span>
               <SkillsSearch
                 selectedSkills={selectedSkills}
@@ -555,30 +388,29 @@ function JobPosting() {
 
             <div>
               <InputField
-                label="Education"
-                description="Specify the educational qualifications required for the position."
+                label={t("posting.education")}
+                description={t("posting.educationDesc")}
                 id="education"
                 value={formData.education}
                 onChange={handleInputChange}
-                placeholder="E.g., 'Bachelor's in Computer Science'"
+                placeholder={t("posting.educationPlaceholder")}
               />
             </div>
             <div>
               <InputField
-                label="Location"
-                description="Specify the work location for the position."
+                label={t("posting.location")}
+                description={t("posting.locationDesc")}
                 id="location"
                 value={formData.location}
                 onChange={handleInputChange}
-                placeholder="E.g., 'Dhaka, Bangladesh'"
+                placeholder={t("posting.locationPlaceholder")}
               />
             </div>
 
             <div>
               <InputField
-                label="Application Deadline"
+                label={t("posting.deadline")}
                 isRequired={true}
-                placeholder="e.g. Software Engineer. Product Designer, etc."
                 id="applicationDeadline"
                 name="applicationDeadline"
                 type="date"
@@ -589,9 +421,9 @@ function JobPosting() {
             </div>
 
             <div className="flex flex-col space-y-2">
-              <span className="font-semibold text-lg">Work Mode</span>
+              <span className="font-semibold text-lg">{t("posting.workMode")}</span>
               <span className="text-sm text-text-secondary">
-                Please select your preferred work mode
+                {t("posting.workModeDesc")}
               </span>
               <div className="flex space-x-4">
                 <RadioButton
@@ -600,7 +432,7 @@ function JobPosting() {
                   value="onsite"
                   checked={formData.workMode === "onsite"}
                   onChange={handleInputChange}
-                  label="Onsite"
+                  label={t("enums.workMode.onsite")}
                 />
                 <RadioButton
                   id="hybrid"
@@ -608,7 +440,7 @@ function JobPosting() {
                   value="hybrid"
                   checked={formData.workMode === "hybrid"}
                   onChange={handleInputChange}
-                  label="Hybrid"
+                  label={t("enums.workMode.hybrid")}
                 />
                 <RadioButton
                   id="remote"
@@ -616,51 +448,51 @@ function JobPosting() {
                   value="remote"
                   checked={formData.workMode === "remote"}
                   onChange={handleInputChange}
-                  label="Remote"
+                  label={t("enums.workMode.remote")}
                 />
               </div>
             </div>
 
             <div className="py-3 font-medium text-lg border-b">
-              2. Additional Details
+              {t("posting.section2")}
             </div>
             <div className=" flex flex-col gap-5">
               <div>
                 <DynamicInputForm
-                  label="Responsibilities"
-                  description="Enter the responsibilities associated with the position here. These could include tasks that the person in this role would be expected to perform, duties they would need to carry out, and any responsibilities they would have. Each responsibility should be entered separately. Click on 'Add' after typing each responsibility."
+                  label={t("posting.responsibilities")}
+                  description={t("posting.responsibilitiesDesc")}
                   name="responsibilities"
                   values={formData.responsibilities}
                   handleInputChange={handleArrayInputChange}
-                  placeholder="E.g., 'Manage team meetings'"
+                  placeholder={t("posting.responsibilitiesPlaceholder")}
                 />
               </div>
               <div>
                 <DynamicInputForm
-                  label="Requirements"
-                  description="Enter the requirements for the position here. These could include necessary skills, qualifications, or experiences that the candidate should possess. Each requirement should be entered separately. Click on 'Add' after typing each requirement."
+                  label={t("posting.requirements")}
+                  description={t("posting.requirementsDesc")}
                   name="requirements"
                   values={formData.requirements}
                   handleInputChange={handleArrayInputChange}
-                  placeholder="E.g., 'Minimum 5 years of experience in management'"
+                  placeholder={t("posting.requirementsPlaceholder")}
                 />
               </div>
               <div>
                 <DynamicInputForm
-                  label="Benefits"
-                  description="List the benefits associated with the position here. These could include health insurance, retirement plans, paid time off, or other perks offered by your company. Each benefit should be entered separately. Click on 'Add' after typing each benefit."
+                  label={t("posting.benefits")}
+                  description={t("posting.benefitsDesc")}
                   name="benefits"
                   values={formData.benefits}
                   handleInputChange={handleArrayInputChange}
-                  placeholder="E.g., 'Health insurance coverage'"
+                  placeholder={t("posting.benefitsPlaceholder")}
                 />
               </div>
 
               <div>
                 <InputField
-                  label="Additional Requirements"
-                  description="Specify any additional requirements for the job that were not covered in the main requirements section."
-                  placeholder="Specify any additional requirements for the job."
+                  label={t("posting.additional")}
+                  description={t("posting.additionalDesc")}
+                  placeholder={t("posting.additionalPlaceholder")}
                   id="additionalRequirements"
                   name="additionalRequirements"
                   onChange={handleInputChange}
@@ -668,21 +500,21 @@ function JobPosting() {
               </div>
               <div>
                 <InputField
-                  label="Number of Openings"
+                  label={t("posting.openings")}
                   id="numberOfOpenings"
                   type="number"
-                  description="Enter the number of vacancies for this position."
+                  description={t("posting.openingsDesc")}
                   value={formData.numberOfOpenings}
                   onChange={handleInputChange}
                 />
               </div>
               <div className="flex space-x-3">
                 <InputField
-                  label="Salary Range From"
+                  label={t("posting.salaryFrom")}
                   id="min"
                   name="salary.min"
                   type="number"
-                  description="Enter the minimum salary for this position."
+                  description={t("posting.salaryFromDesc")}
                   value={formData.salary.min}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
@@ -690,11 +522,11 @@ function JobPosting() {
                   }))}
                 />
                 <InputField
-                  label="Salary Range To"
+                  label={t("posting.salaryTo")}
                   id="max"
                   name="salary.max"
                   type="number"
-                  description="Enter the maximum salary for this position."
+                  description={t("posting.salaryToDesc")}
                   value={formData.salary.max}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
@@ -708,7 +540,7 @@ function JobPosting() {
 
               <div>
                 <Checkbox
-                  label="Urgent?"
+                  label={t("posting.urgent")}
                   name="urgent"
                   checked={formData.urgent}
                   onChange={handleCheckboxChange}
@@ -717,11 +549,9 @@ function JobPosting() {
             </div>
             <div>
               <TextEditor
-                label={"Description"}
+                label={t("posting.description")}
                 isRequired={true}
-                placeholder={
-                  "Provide a detailed description of the position. This could include the responsibilities, tasks, and expectations associated with the role."
-                }
+                placeholder={t("posting.descriptionPlaceholder")}
                 id={"description"}
                 name={"description"}
                 onChange={handleInputChange}
@@ -734,7 +564,7 @@ function JobPosting() {
             </div>
 
             <SubmissionButton 
-              label={submitting ? "Submitting..." : "Submit"} 
+              label={submitting ? t("posting.submitting") : t("posting.submit")} 
               type="submit" 
               className={"py-3"} 
             />

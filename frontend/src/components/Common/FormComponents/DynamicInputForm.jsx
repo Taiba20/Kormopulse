@@ -1,5 +1,6 @@
 import React from "react";
 import SubmissionButton from "../Buttons/SubmissionButton";
+import { useI18n } from "../../../i18n/I18nContext";
 
 function DynamicInputForm({
   label,
@@ -9,6 +10,7 @@ function DynamicInputForm({
   values,
   handleInputChange,
 }) {
+  const { t } = useI18n();
   const handleAddFields = () => {
     handleInputChange(name, values.length, { target: { value: "" } });
   };
@@ -37,7 +39,7 @@ function DynamicInputForm({
             />
             <SubmissionButton
               color="white"
-              label="Remove"
+              label={t("posting.dynamic.remove")}
               onClick={() => handleRemoveFields(index)}
               type="button"
             />
@@ -45,7 +47,7 @@ function DynamicInputForm({
         ))}
         <SubmissionButton
           color="black"
-          label="Add"
+          label={t("posting.dynamic.add")}
           onClick={handleAddFields}
           type="button"
         />

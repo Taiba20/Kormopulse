@@ -1,10 +1,11 @@
 import React from "react";
 import Dot from "../Dot";
 import MatchBadge from "../Common/MatchBadge";
+import { useI18n } from "../../i18n/I18nContext";
 
 function JobCard({ job, redirectToDetail, match }) {
-  console.log('JobCard received job:', job); // Debug log
-  
+  const { t, tOr, timeAgo: formatTimeAgo, formatNumber } = useI18n();
+
   const {
     title,
     salary,
@@ -18,7 +19,7 @@ function JobCard({ job, redirectToDetail, match }) {
 
   // Standardize company data access
   const companyLogo = company?.companyLogo || company?.logo || "https://via.placeholder.com/44x44?text=C";
-  const companyName = company?.companyName || company?.name || "Company Name Not Available";
+  const companyName = company?.companyName || company?.name || t("jobs.companyUnavailable");
   
   // Standardize salary data access
   const salaryRange = salary;
@@ -29,27 +30,7 @@ function JobCard({ job, redirectToDetail, match }) {
   // Standardize date
   const rawDatePosted = createdAt;
 
-  const datePosted = new Date(rawDatePosted);
-
-  const now = new Date();
-
-  const diffTime = Math.abs(now - datePosted);
-  const diffMinutes = Math.floor(diffTime / (1000 * 60));
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30));
-
-  let timeAgo;
-
-  if (diffMinutes < 60) {
-    timeAgo = diffMinutes + " minutes ago";
-  } else if (diffHours < 24) {
-    timeAgo = diffHours + " hours ago";
-  } else if (diffDays < 30) {
-    timeAgo = diffDays + " days ago";
-  } else {
-    timeAgo = diffMonths + " months ago";
-  }
+  const timeAgo = formatTimeAgo(rawDatePosted);
 
   let color, bgColor;
   switch (type) {
@@ -114,16 +95,16 @@ function JobCard({ job, redirectToDetail, match }) {
                 <div className="flex gap-3 items-center  md:flex-row text-xs md:text-sm">
                   <div className={`tag py-px px-2.5 rounded-xl ${bgColor}`}>
                     <span className={color}>
-                      {type?.charAt(0).toUpperCase() + type?.slice(1).replace('-', ' ') || 'Full-time'}
+                      {tOr(`enums.jobType.${String(type || "").toLowerCase()}`, type || t("enums.jobType.full-time"))}
                     </span>
                   </div>
                   <Dot />
                   <div className="strippend">
                     <span className="text-text-secondary">
                       {salaryRange ? (
-                        `৳${(salaryRange.min || 0).toLocaleString()} - ৳${(salaryRange.max || 0).toLocaleString()}`
+                        `৳${formatNumber(salaryRange.min || 0)} - ৳${formatNumber(salaryRange.max || 0)}`
                       ) : (
-                        'Salary not specified'
+                        t("jobs.salaryNotSpecified")
                       )}
                     </span>
                   </div>
@@ -153,7 +134,7 @@ function JobCard({ job, redirectToDetail, match }) {
                 {responsibilities[1] && <li>{responsibilities[1]}</li>}
               </>
             ) : (
-              <li>Click to view job details</li>
+              <li>{t("jobs.clickToView")}</li>
             )}
           </ul>
         </div>

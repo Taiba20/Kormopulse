@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { reviewService } from "../services/reviewService";
 import JobCard from "../components/JobListing/JobCard";
+import { useI18n } from "../i18n/I18nContext";
 
 const STAR_RATING = [1, 2, 3, 4, 5];
 
@@ -25,6 +26,7 @@ function StarRating({ value, onChange, readOnly }) {
 }
 
 function ReviewForm({ companyId, existing, onSaved }) {
+  const { t, tError } = useI18n();
   const [rating, setRating] = useState(existing?.rating || 0);
   const [title, setTitle] = useState(existing?.title || "");
   const [pros, setPros] = useState(existing?.pros || "");
@@ -36,7 +38,7 @@ function ReviewForm({ companyId, existing, onSaved }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!rating) {
-      setError("Choose a star rating.");
+      setError(t("companyPublic.chooseRating"));
       return;
     }
     setSaving(true);
@@ -47,7 +49,7 @@ function ReviewForm({ companyId, existing, onSaved }) {
       else await reviewService.createReview(companyId, payload);
       onSaved();
     } catch (err) {
-      setError(err.response?.data?.message || "Could not save your review.");
+      setError(tError(err, "companyPublic.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -61,24 +63,25 @@ function ReviewForm({ companyId, existing, onSaved }) {
         onChange={(e) => setTitle(e.target.value)}
         required
         minLength={3}
-        placeholder="Give your review a headline"
+        placeholder={t("companyPublic.headline")}
         className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-background"
       />
-      <textarea value={pros} onChange={(e) => setPros(e.target.value)} rows={2} placeholder="What did you like?" className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-background resize-none" />
-      <textarea value={cons} onChange={(e) => setCons(e.target.value)} rows={2} placeholder="What could be better?" className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-background resize-none" />
+      <textarea value={pros} onChange={(e) => setPros(e.target.value)} rows={2} placeholder={t("companyPublic.pros")} className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-background resize-none" />
+      <textarea value={cons} onChange={(e) => setCons(e.target.value)} rows={2} placeholder={t("companyPublic.cons")} className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-background resize-none" />
       <label className="flex items-center gap-2 text-sm text-text-secondary">
         <input type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)} />
-        Post anonymously
+        {t("companyPublic.postAnonymously")}
       </label>
       {error && <p className="text-sm text-error">{error}</p>}
       <button type="submit" disabled={saving} className="self-start bg-primary text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary-dark disabled:opacity-50">
-        {saving ? "Saving..." : existing ? "Update review" : "Post review"}
+        {saving ? t("companyPublic.saving") : existing ? t("companyPublic.update") : t("companyPublic.post")}
       </button>
     </form>
   );
 }
 
 function CompanyProfilePublic() {
+  const { t, formatDate, formatNumber } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const { userData } = useSelector((store) => store.auth);
@@ -123,7 +126,7 @@ function CompanyProfilePublic() {
   }
 
   if (!company) {
-    return <div className="mt-16 min-h-screen flex items-center justify-center text-text-secondary">Company not found.</div>;
+    return <div className="mt-16 min-h-screen flex items-center justify-center text-text-secondary">{t("companyPublic.notFound")}</div>;
   }
 
   return (
@@ -138,7 +141,7 @@ function CompanyProfilePublic() {
               <div className="flex items-center gap-2 mt-1.5">
                 <StarRating value={Math.round(summary.average)} readOnly />
                 <span className="text-sm text-text-secondary">
-                  {summary.average} ({summary.count} review{summary.count === 1 ? "" : "s"}) &middot; {summary.recommendPercent}% recommend
+                  {t("companyPublic.reviewsSummary", { count: summary.count, average: formatNumber(summary.average), percent: formatNumber(summary.recommendPercent) })}
                 </span>
               </div>
             )}
@@ -147,9 +150,9 @@ function CompanyProfilePublic() {
         </div>
 
         <div>
-          <h2 className="font-semibold text-text-primary mb-3">Open positions ({jobs.length})</h2>
+          <h2 className="font-semibold text-text-primary mb-3">{t("companyPublic.openPositions", { count: jobs.length })}</h2>
           {jobs.length === 0 ? (
-            <p className="text-text-secondary text-sm">No open positions right now.</p>
+            <p className="text-text-secondary text-sm">{t("companyPublic.noPositions")}</p>
           ) : (
             jobs.map((job) => (
               <JobCard key={job._id} job={{ ...job, company }} redirectToDetail={(jid) => navigate(`/jobs/${jid}`)} />
@@ -159,10 +162,10 @@ function CompanyProfilePublic() {
 
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-text-primary">Reviews</h2>
+            <h2 className="font-semibold text-text-primary">{t("companyPublic.reviews")}</h2>
             {userData?.role === "jobSeeker" && !showForm && (
               <button onClick={() => setShowForm(true)} className="text-sm text-primary hover:underline">
-                {myReview ? "Edit your review" : "Write a review"}
+                {myReview ? t("companyPublic.editReview") : t("companyPublic.writeReview")}
               </button>
             )}
           </div>
@@ -182,18 +185,18 @@ function CompanyProfilePublic() {
 
           <div className="flex flex-col gap-3">
             {reviews.length === 0 ? (
-              <p className="text-text-secondary text-sm">No reviews yet. Be the first to share your experience.</p>
+              <p className="text-text-secondary text-sm">{t("companyPublic.noReviews")}</p>
             ) : (
               reviews.map((r) => (
                 <div key={r._id} className="bg-background border border-neutral-200 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-1">
                     <StarRating value={r.rating} readOnly />
-                    <span className="text-xs text-text-muted">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-text-muted">{formatDate(r.createdAt)}</span>
                   </div>
                   <p className="font-medium text-text-primary">{r.title}</p>
                   {r.pros && <p className="text-sm text-success mt-1">👍 {r.pros}</p>}
                   {r.cons && <p className="text-sm text-error mt-1">👎 {r.cons}</p>}
-                  <p className="text-xs text-text-muted mt-2">— {r.author}</p>
+                  <p className="text-xs text-text-muted mt-2">— {r.author === "Anonymous" ? t("companyPublic.anonymous") : r.author === "Former user" ? t("companyPublic.formerUser") : r.author}</p>
                 </div>
               ))
             )}

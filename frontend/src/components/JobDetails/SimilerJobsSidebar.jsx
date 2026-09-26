@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import SimilerJobCard from "./SimilerJobCard";
 import { contentService } from "../../services/contentService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function SimilerJobsSidebar({ currentJobId }) {
+  const { t } = useI18n();
   const [similarJobs, setSimilarJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,7 +30,7 @@ function SimilerJobsSidebar({ currentJobId }) {
         }
       } catch (err) {
         console.error('Error fetching similar jobs:', err);
-        setError('Failed to load similar jobs');
+        setError(true);
         setSimilarJobs([]);
       } finally {
         setLoading(false);
@@ -44,7 +46,7 @@ function SimilerJobsSidebar({ currentJobId }) {
     return (
       <div className="border border-neutral-200 bg-background rounded-3xl p-5 flex flex-col gap-5 shadow-md">
         <div>
-          <h3 className="font-medium text-text-primary">Jobs you might be interested in</h3>
+          <h3 className="font-medium text-text-primary">{t("jobs.similar.title")}</h3>
         </div>
         <div className="flex flex-col gap-5">
           {[1, 2, 3].map((i) => (
@@ -69,12 +71,12 @@ function SimilerJobsSidebar({ currentJobId }) {
   return (
     <div className="border border-neutral-200 bg-background rounded-3xl p-5 flex flex-col gap-5 shadow-md">
       <div>
-        <h3 className="font-medium text-text-primary">Jobs you might be interested in</h3>
+        <h3 className="font-medium text-text-primary">{t("jobs.similar.title")}</h3>
       </div>
       <div className="flex flex-col gap-5">
         {error ? (
           <div className="text-center py-4">
-            <p className="text-text-secondary text-sm">{error}</p>
+            <p className="text-text-secondary text-sm">{t("jobs.similar.failed")}</p>
           </div>
         ) : similarJobs.length > 0 ? (
           similarJobs.map((job) => (
@@ -82,7 +84,7 @@ function SimilerJobsSidebar({ currentJobId }) {
           ))
         ) : (
           <div className="text-center py-4">
-            <p className="text-text-secondary text-sm">No similar jobs found</p>
+            <p className="text-text-secondary text-sm">{t("jobs.similar.none")}</p>
           </div>
         )}
       </div>

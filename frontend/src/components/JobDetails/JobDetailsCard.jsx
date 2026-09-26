@@ -4,8 +4,10 @@ import { useSelector } from "react-redux";
 import ApplyModal from "./ApplyModal";
 import InterviewPrepModal from "./InterviewPrepModal";
 import MatchBreakdown from "../Common/MatchBreakdown";
+import { useI18n } from "../../i18n/I18nContext";
 
 function JobDetailsCard({ jobData }) {
+  const { t, tError, timeAgo: formatTimeAgo, formatNumber } = useI18n();
   const { userData } = useSelector((store) => store.auth);
 
   // Handle backend data structure properly
@@ -21,47 +23,25 @@ function JobDetailsCard({ jobData }) {
     createdAt,
   } = jobData;
 
-  console.log('JobDetailsCard received jobData:', jobData);
-
-  // Use createdAt from backend
-  const datePosted = new Date(createdAt);
-  
-  // Calculate time ago properly
-  const now = new Date();
-  const diffTime = Math.abs(now - datePosted);
-  const diffMinutes = Math.floor(diffTime / (1000 * 60));
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30));
-
-  let timeAgo = "Just now";
-  if (diffMinutes < 60) {
-    timeAgo = diffMinutes > 0 ? `${diffMinutes} minutes ago` : "Just now";
-  } else if (diffHours < 24) {
-    timeAgo = `${diffHours} hours ago`;
-  } else if (diffDays < 30) {
-    timeAgo = `${diffDays} days ago`;
-  } else {
-    timeAgo = `${diffMonths} months ago`;
-  }
+  const timeAgo = formatTimeAgo(createdAt);
 
   // Get company info from proper backend structure
-  const companyName = company?.companyName || "Company Name Not Available";
+  const companyName = company?.companyName || t("jobs.companyUnavailable");
   const companyLogo = company?.companyLogo || "https://via.placeholder.com/80x80?text=C";
   
   // Get salary info
   const salaryMin = salary?.min;
   const salaryMax = salary?.max;
   const salaryDisplay = salaryMin && salaryMax 
-    ? `৳${salaryMin.toLocaleString()} - ৳${salaryMax.toLocaleString()}`
-    : "Salary not disclosed";
+    ? `৳${formatNumber(salaryMin)} - ৳${formatNumber(salaryMax)}`
+    : t("jobs.details.salaryNotDisclosed");
 
   // Get experience range
   const experienceMin = experience?.min || 0;
   const experienceMax = experience?.max || 0;
   const experienceDisplay = experienceMax > experienceMin 
-    ? `${experienceMin}-${experienceMax} Years`
-    : `${experienceMin}+ Years`;
+    ? t("jobs.details.years", { min: formatNumber(experienceMin), max: formatNumber(experienceMax) })
+    : t("jobs.details.yearsPlus", { min: formatNumber(experienceMin) });
 
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -101,9 +81,9 @@ function JobDetailsCard({ jobData }) {
       setTimeout(() => setShowSavedMessage(false), 3000);
     } catch (error) {
       if (error.response?.data?.message === "Job is already saved") {
-        alert("You have already saved this job. Please check your saved jobs.");
+        alert(t("jobs.details.alreadySavedAlert"));
       } else {
-        alert(error.response?.data?.message || "Failed to save job. Please try again.");
+        alert(tError(error, "jobs.details.saveFailed"));
       }
     }
     setSaving(false);
@@ -121,9 +101,9 @@ function JobDetailsCard({ jobData }) {
       if (error.response?.data?.message === "You have already applied for this job") {
         setHasApplied(true);
         setShowApplyModal(false);
-        alert("You have already applied for this job. Your profile has been shared with the recruiter.");
+        alert(t("jobs.details.alreadyAppliedAlert"));
       } else {
-        alert(error.response?.data?.message || "Failed to apply for job. Please try again.");
+        alert(tError(error, "jobs.details.applyFailed"));
       }
     }
     setApplying(false);
@@ -139,22 +119,22 @@ function JobDetailsCard({ jobData }) {
       {showAppliedMessage && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex justify-between items-center animate-in slide-in-from-top duration-300">
           <div>
-            <h4 className="font-semibold text-green-800 mb-1">Application Successful!</h4>
-            <p className="text-green-700 text-sm">Your application has been submitted successfully. Your profile has been shared with the recruiter.</p>
+            <h4 className="font-semibold text-green-800 mb-1">{t("jobs.details.applicationSuccess")}</h4>
+            <p className="text-green-700 text-sm">{t("jobs.details.applicationSuccessText")}</p>
           </div>
           <button 
             onClick={handleAppliedOkay}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
           >
-            Okay
+            {t("jobs.details.okay")}
           </button>
         </div>
       )}
       
       {showSavedMessage && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 animate-in slide-in-from-top duration-300">
-          <h4 className="font-semibold text-primary mb-1">Job Saved Successfully!</h4>
-          <p className="text-primary/80 text-sm">The job has been saved successfully. You can view it in your saved jobs.</p>
+          <h4 className="font-semibold text-primary mb-1">{t("jobs.details.jobSaved")}</h4>
+          <p className="text-primary/80 text-sm">{t("jobs.details.jobSavedText")}</p>
         </div>
       )}
 
@@ -196,7 +176,7 @@ function JobDetailsCard({ jobData }) {
         </div>
         <div>
           <div className="h-20 w-20 rounded-3xl border border-neutral-200 overflow-hidden flex justify-center items-center bg-background-secondary">
-            <img src={companyLogo} alt="Company Logo" />
+            <img src={companyLogo} alt="" />
           </div>
         </div>
       </div>
@@ -204,13 +184,13 @@ function JobDetailsCard({ jobData }) {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-4">
         <div className="flex flex-wrap gap-4">
           <div className="font-light text-text-secondary">
-            Posted: <span className="font-medium text-text-primary">{timeAgo}</span>
+            {t("jobs.details.posted")} <span className="font-medium text-text-primary">{timeAgo}</span>
           </div>
           <div className="font-light text-text-secondary">
-            Openings: <span className="font-medium text-text-primary">{numberOfOpenings}</span>
+            {t("jobs.details.openings")} <span className="font-medium text-text-primary">{formatNumber(numberOfOpenings || 0)}</span>
           </div>
           <div className="font-light text-text-secondary">
-            Applicants: <span className="font-medium text-text-primary">{numberOfApplicants}</span>
+            {t("jobs.details.applicants")} <span className="font-medium text-text-primary">{formatNumber(numberOfApplicants || 0)}</span>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -226,16 +206,16 @@ function JobDetailsCard({ jobData }) {
             disabled={userData?.role !== "jobSeeker" || saving || hasSaved}
             title={
               !userData
-                ? "Please login to save job"
+                ? t("jobs.details.loginToSave")
                 : userData?.role === "employer"
-                ? "Employers are not allowed to save jobs"
+                ? t("jobs.details.employerNoSave")
                 : hasSaved
-                ? "Job already saved"
+                ? t("jobs.details.alreadySavedTitle")
                 : ""
             }
           >
             <i className={`mr-2 ${hasSaved ? "fas fa-bookmark" : "far fa-bookmark"}`}></i>
-            {saving ? "Saving..." : hasSaved ? "Saved" : "Save"}
+            {saving ? t("jobs.details.saving") : hasSaved ? t("jobs.details.saved") : t("jobs.details.save")}
           </button>
           <button
             className={`h-11 px-8 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-md ${
@@ -249,16 +229,16 @@ function JobDetailsCard({ jobData }) {
             disabled={userData?.role !== "jobSeeker" || applying || hasApplied}
             title={
               !userData
-                ? "Please login to apply for job"
+                ? t("jobs.details.loginToApply")
                 : userData?.role === "employer"
-                ? "Employers are not allowed to apply"
+                ? t("jobs.details.employerNoApply")
                 : hasApplied
-                ? "Already applied for this job"
+                ? t("jobs.details.alreadyAppliedTitle")
                 : ""
             }
           >
             <i className={`mr-2 ${hasApplied ? "fas fa-paper-plane" : "far fa-paper-plane"}`}></i>
-            {applying ? "Applying..." : hasApplied ? "Applied" : "Apply Now"}
+            {applying ? t("jobs.details.applying") : hasApplied ? t("jobs.details.applied") : t("jobs.details.applyNow")}
           </button>
           {userData?.role === "jobSeeker" && (
             <button
@@ -266,7 +246,7 @@ function JobDetailsCard({ jobData }) {
               className="h-11 px-6 rounded-xl font-medium border border-secondary text-secondary hover:bg-secondary hover:text-white transition-all duration-200 hover:scale-105"
             >
               <i className="fa-solid fa-graduation-cap mr-2"></i>
-              Prep for interview
+              {t("jobs.details.prepInterview")}
             </button>
           )}
         </div>

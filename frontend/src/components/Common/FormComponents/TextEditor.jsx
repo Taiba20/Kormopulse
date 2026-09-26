@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useI18n } from "../../../i18n/I18nContext";
 
 function TextEditor({
   label,
@@ -13,6 +14,7 @@ function TextEditor({
   generatingDescription,
   error,
 }) {
+  const { t } = useI18n();
   const editorRef = useRef(null);
   const [isActive, setIsActive] = useState(false);
 
@@ -34,7 +36,7 @@ function TextEditor({
   };
 
   const insertLink = () => {
-    const url = prompt('Enter URL:');
+    const url = prompt(t('posting.editor.enterUrl'));
     if (url) {
       formatText('createLink', url);
     }
@@ -68,9 +70,7 @@ function TextEditor({
               }`}
               onClick={handleGenerate}
             >
-              {generatingDescription
-                ? "Generating... ⏳"
-                : "✨ Generate using AI"}
+              {generatingDescription ? t("posting.editor.generating") : t("posting.editor.generate")}
             </span>
           </div>
         )}
@@ -85,7 +85,7 @@ function TextEditor({
           <div className="flex items-center gap-1 mr-2">
             <ToolbarButton
               onClick={() => formatText('bold')}
-              title="Bold"
+              title={t("posting.editor.bold")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M5 3a1 1 0 000 2h1v10H5a1 1 0 100 2h3.5a1 1 0 100-2H8V5h2.5a3 3 0 010 6H9.5a1 1 0 100 2h1a5 5 0 000-10H5z"/>
@@ -93,7 +93,7 @@ function TextEditor({
             </ToolbarButton>
             <ToolbarButton
               onClick={() => formatText('italic')}
-              title="Italic"
+              title={t("posting.editor.italic")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M7 3a1 1 0 000 2h1.5l-3 10H4a1 1 0 100 2h6a1 1 0 100-2H8.5l3-10H13a1 1 0 100-2H7z"/>
@@ -101,7 +101,7 @@ function TextEditor({
             </ToolbarButton>
             <ToolbarButton
               onClick={() => formatText('underline')}
-              title="Underline"
+              title={t("posting.editor.underline")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M4 16a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM6 3a1 1 0 011-1h6a1 1 0 110 2h-1v4a3 3 0 01-6 0V4H5a1 1 0 01-1-1z"/>
@@ -114,7 +114,7 @@ function TextEditor({
           <div className="flex items-center gap-1 mr-2">
             <ToolbarButton
               onClick={() => formatText('insertUnorderedList')}
-              title="Bullet List"
+              title={t("posting.editor.bullets")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 100 2h14a1 1 0 100-2H3zM3 8a1 1 0 100 2h14a1 1 0 100-2H3zM3 12a1 1 0 100 2h14a1 1 0 100-2H3z"/>
@@ -122,7 +122,7 @@ function TextEditor({
             </ToolbarButton>
             <ToolbarButton
               onClick={() => formatText('insertOrderedList')}
-              title="Numbered List"
+              title={t("posting.editor.numbered")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 100 2h14a1 1 0 100-2H3zM3 8a1 1 0 100 2h14a1 1 0 100-2H3zM3 12a1 1 0 100 2h14a1 1 0 100-2H3z"/>
@@ -135,7 +135,7 @@ function TextEditor({
           <div className="flex items-center gap-1 mr-2">
             <ToolbarButton
               onClick={() => formatText('justifyLeft')}
-              title="Align Left"
+              title={t("posting.editor.alignLeft")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 4a1 1 0 100 2h10a1 1 0 100-2H3zM3 8a1 1 0 100 2h14a1 1 0 100-2H3zM3 12a1 1 0 100 2h10a1 1 0 100-2H3z"/>
@@ -143,7 +143,7 @@ function TextEditor({
             </ToolbarButton>
             <ToolbarButton
               onClick={() => formatText('justifyCenter')}
-              title="Align Center"
+              title={t("posting.editor.alignCenter")}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M5 4a1 1 0 100 2h10a1 1 0 100-2H5zM3 8a1 1 0 100 2h14a1 1 0 100-2H3zM5 12a1 1 0 100 2h10a1 1 0 100-2H5z"/>
@@ -155,7 +155,7 @@ function TextEditor({
 
           <ToolbarButton
             onClick={insertLink}
-            title="Insert Link"
+            title={t("posting.editor.link")}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/>
@@ -164,7 +164,7 @@ function TextEditor({
 
           <ToolbarButton
             onClick={() => formatText('removeFormat')}
-            title="Clear Formatting"
+            title={t("posting.editor.clear")}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>

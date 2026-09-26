@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { contentService } from "../../services/contentService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Searchbar({ setSearch, setSelectedLocation }) {
+  const { t } = useI18n();
   const [location, setLocation] = useState([]);
   const [locationQuery, setLocationQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -58,7 +60,7 @@ function Searchbar({ setSearch, setSelectedLocation }) {
             <input
               type="text"
               name="search"
-              placeholder="Search job title or keyword"
+              placeholder={t("jobs.searchPlaceholder")}
               className="w-full h-8 px-1 focus:outline-none focus:ring-0 rounded border-none "
               onChange={handleInputChange}
             />
@@ -75,7 +77,7 @@ function Searchbar({ setSearch, setSelectedLocation }) {
               <input
                 type="text"
                 name="search"
-                placeholder="City or Division (e.g., Dhaka, Chittagong)"
+                placeholder={t("jobs.locationPlaceholder")}
                 className="w-full h-8 px-1 focus:outline-none focus:ring-0 border-none rounded"
                 onChange={handleLocationInputChange}
                 value={locationQuery}
@@ -105,7 +107,7 @@ function Searchbar({ setSearch, setSelectedLocation }) {
               className="bg-primary text-text-inverse font-medium rounded-lg py-2.5 px-7 lg:w-8/12 w-full hover:bg-primary-dark transition-colors duration-200"
               onClick={handleFindJob}
             >
-              Find jobs
+              {t("jobs.findJobs")}
             </button>
           </div>
         </div>

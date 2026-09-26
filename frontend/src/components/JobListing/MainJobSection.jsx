@@ -7,8 +7,10 @@ import { contentService } from "../../services/contentService";
 import { applicationService } from "../../services/applicationService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useI18n } from "../../i18n/I18nContext";
 
 function MainJobSection() {
+  const { t, formatNumber } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const [searchParams] = useSearchParams();
   const companyFilter = searchParams.get('company');
@@ -90,12 +92,12 @@ function MainJobSection() {
         </div>
         <div>
           <div className="text-text-secondary font-medium my-3 ml-1.5">
-            <span>{jobs.length} Jobs results</span>
+            <span>{t("jobs.resultsCount", { count: formatNumber(jobs.length) })}</span>
           </div>
           <div>
             {loading ? (
               <div className="flex justify-center items-center p-8">
-                <div className="text-lg text-neutral-600">Loading jobs...</div>
+                <div className="text-lg text-neutral-600">{t("jobs.loadingJobs")}</div>
               </div>
             ) : jobs.length > 0 ? (
               jobs.map((job) => (
@@ -108,7 +110,7 @@ function MainJobSection() {
               ))
             ) : (
               <div className="flex justify-center items-center p-8">
-                <div className="text-lg text-neutral-600">No jobs found</div>
+                <div className="text-lg text-neutral-600">{t("jobs.noJobs")}</div>
               </div>
             )}
           </div>
