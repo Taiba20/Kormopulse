@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { forgotPassword, resetPassword } from '../services/userService';
 import { IoEye, IoEyeOff } from 'react-icons/io5';
+import { useI18n } from '../i18n/I18nContext';
 
 function ForgotPassword() {
+  const { t, tError } = useI18n();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("email"); // "email" -> "reset"
@@ -41,9 +43,9 @@ function ForgotPassword() {
     try {
       await forgotPassword({ email: formData.email });
       setStep("reset");
-      setInfoMessage("If an account exists for this email, we sent a 6-digit code. It expires in 10 minutes.");
+      setInfoMessage(t('auth.forgot.sentInfo'));
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Something went wrong");
+      setErrorMessage(tError(error, 'common.somethingWrong'));
       resetErrorMessage();
     } finally {
       setLoading(false);
@@ -54,13 +56,13 @@ function ForgotPassword() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMessage("Passwords do not match");
+      setErrorMessage(t('auth.forgot.mismatch'));
       resetErrorMessage();
       return;
     }
 
     if (formData.password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long");
+      setErrorMessage(t('auth.forgot.tooShort'));
       resetErrorMessage();
       return;
     }
@@ -70,10 +72,10 @@ function ForgotPassword() {
 
     try {
       await resetPassword(formData);
-      alert("Password updated successfully! Please login with your new password.");
+      alert(t('auth.forgot.done'));
       navigate("/login");
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Something went wrong");
+      setErrorMessage(tError(error, "common.somethingWrong"));
       resetErrorMessage();
     } finally {
       setLoading(false);
@@ -92,25 +94,25 @@ function ForgotPassword() {
         <div className="sm:w-3/6 sm:h-screen flex items-center justify-center sm:pt-5 sm:pl-5 md:w-3/5 lg:pl-16 lg:pt-5">
           <div className="h-full w-full sm:text-right sm:pr-12 bg-primary sm:pt-24 sm:pl-14 text-text-inverse sm:rounded-t-lg lg:pt-44">
             <h2 className="py-4 text-xl text-center sm:text-5xl sm:text-right font-bold sm:mb-5 sm:pl-4 xl:text-6xl ">
-              Reset your password
+              {t('auth.forgot.heading')}
             </h2>
             <p className="hidden sm:block font-light sm:pl-3 sm:text-lg text-text-inverse xl:text-xl xl:pl-16">
-              Enter your email address and we'll email you a code to reset your password.
+              {t('auth.forgot.intro')}
             </p>
           </div>
         </div>
 
         <div className="w-full sm:w-3/6 pt-7 sm:pt-14 md:w-2/5">
           <div className="p-3 sm:p-10">
-            <h2 className="text-3xl font-bold text-text-primary">Reset Password</h2>
+            <h2 className="text-3xl font-bold text-text-primary">{t('auth.forgot.title')}</h2>
             <p className="mt-3 text-text-secondary">
-              {step === "email" ? "Enter your email to receive a reset code" : "Enter the code we emailed you and choose a new password"}
+              {step === "email" ? t('auth.forgot.stepEmail') : t('auth.forgot.stepReset')}
             </p>
             {infoMessage && <p className="mt-3 text-sm text-primary">{infoMessage}</p>}
             
             <form className="mt-6" onSubmit={step === "email" ? handleSendCode : handleResetPassword}>
               <div className="flex flex-col">
-                <label className="font-semibold text-text-primary">Email:</label>
+                <label className="font-semibold text-text-primary">{t('auth.email')}</label>
                 <input
                   type="email"
                   name="email"
@@ -119,12 +121,12 @@ function ForgotPassword() {
                   onChange={handleInputChange}
                   readOnly={step === "reset"}
                   className="rounded h-10 text-base pl-5 mb-3 border-x border-y border-neutral-400 bg-background text-text-primary"
-                  placeholder="Enter your email address"
+                  placeholder={t('auth.forgot.emailPlaceholder')}
                 />
                 
                 {step === "reset" && (
                   <>
-                <label className="font-semibold text-text-primary">Reset Code:</label>
+                <label className="font-semibold text-text-primary">{t('auth.forgot.code')}</label>
                 <input
                   type="text"
                   name="code"
@@ -135,10 +137,10 @@ function ForgotPassword() {
                   value={formData.code}
                   onChange={handleInputChange}
                   className="rounded h-10 text-base pl-5 mb-3 border-x border-y border-neutral-400 bg-background text-text-primary tracking-widest"
-                  placeholder="6-digit code"
+                  placeholder={t('auth.forgot.codePlaceholder')}
                 />
 
-                <label className="font-semibold text-text-primary">New Password:</label>
+                <label className="font-semibold text-text-primary">{t('auth.forgot.newPassword')}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -147,7 +149,7 @@ function ForgotPassword() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="rounded h-10 text-base pl-5 pr-12 mb-3 border-x border-y border-neutral-400 bg-background text-text-primary w-full"
-                    placeholder="Enter new password"
+                    placeholder={t('auth.forgot.newPasswordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -158,7 +160,7 @@ function ForgotPassword() {
                   </button>
                 </div>
 
-                <label className="font-semibold text-text-primary">Confirm Password:</label>
+                <label className="font-semibold text-text-primary">{t('auth.forgot.confirmPassword')}</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -167,7 +169,7 @@ function ForgotPassword() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className="rounded h-10 text-base pl-5 pr-12 mb-3 border-x border-y border-neutral-400 bg-background text-text-primary w-full"
-                    placeholder="Confirm new password"
+                    placeholder={t('auth.forgot.confirmPlaceholder')}
                   />
                   <button
                     type="button"
@@ -189,7 +191,7 @@ function ForgotPassword() {
                     to="/login"
                     className="text-right font-light text-text-primary cursor-pointer mb-3 underline"
                   >
-                    Back to Login
+                    {t('auth.forgot.backToLogin')}
                   </Link>
                 </div>
 
@@ -198,19 +200,19 @@ function ForgotPassword() {
                   disabled={loading}
                   className="bg-primary rounded-md text-text-inverse font-normal text-sm h-11 hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
-                  {step === "email" ? (loading ? "Sending..." : "Send Code") : (loading ? "Updating..." : "Update Password")}
+                  {step === "email" ? (loading ? t('auth.forgot.sending') : t('auth.forgot.sendCode')) : (loading ? t('auth.forgot.updating') : t('auth.forgot.update'))}
                 </button>
               </div>
             </form>
 
             <div className="mt-5">
               <p className="cursor-pointer text-center text-text-secondary">
-                Remember your password?{" "}
+                {t('auth.forgot.remember')}{" "}
                 <Link 
                   to="/login" 
                   className="underline text-primary hover:text-primary-dark"
                 >
-                  Login
+                  {t('auth.forgot.login')}
                 </Link>
               </p>
             </div>

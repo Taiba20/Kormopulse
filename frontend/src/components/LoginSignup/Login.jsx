@@ -7,8 +7,10 @@ import { useNavigate } from "react-router-dom";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import GoogleSignInButton from './GoogleSignInButton';
+import { useI18n } from '../../i18n/I18nContext';
 
 function Login() {
+  const { t, tError } = useI18n();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ function Login() {
       redirectAfterLogin(loggedInUser);
     } catch (error) {
       dispatch(loginFailure());
-      setErrorMessage(error.response?.data?.message || 'Login failed.');
+      setErrorMessage(tError(error, 'auth.login.failed'));
       resetErrorMessage();
     } finally {
       setLoading(false);
@@ -87,21 +89,21 @@ function Login() {
         <div className="sm:w-3/6 sm:h-screen flex items-center justify-center sm:pt-5 sm:pl-5 md:w-3/5 lg:pl-16 lg:pt-5">
           <div className="h-full w-full sm:text-right sm:pr-12 bg-primary sm:pt-24 sm:pl-14 text-text-inverse sm:rounded-t-lg lg:pt-44">
             <h2 className="py-4 text-xl text-center sm:text-5xl sm:text-right font-bold sm:mb-5 sm:pl-4 xl:text-6xl ">
-              Find the job made for you.
+              {t('auth.brandTagline')}
             </h2>
             <p className="hidden sm:block font-light sm:pl-3 sm:text-lg text-text-inverse xl:text-xl xl:pl-16">
-              Browse over 130K jobs at top companies and fast-growing startups.
+              {t('auth.browseJobs')}
             </p>
           </div>
         </div>
 
         <div className="w-full sm:w-3/6 pt-7 sm:pt-14 md:w-2/5">
           <div className="p-3 sm:p-10">
-            <h2 className="text-3xl font-bold text-text-primary">Login</h2>
-            <p className="mt-3 text-text-secondary">Find the job made for you!</p>
+            <h2 className="text-3xl font-bold text-text-primary">{t('auth.login.title')}</h2>
+            <p className="mt-3 text-text-secondary">{t('auth.login.subtitle')}</p>
             <form className="mt-6" onSubmit={handleFormSubmission}>
               <div className="flex flex-col">
-                <label className="font-semibold text-text-primary">Email:</label>
+                <label className="font-semibold text-text-primary">{t('auth.email')}</label>
 
                 <input
                   type="text"
@@ -110,9 +112,9 @@ function Login() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="rounded h-10 text-base pl-5 mb-3 border-x border-y border-neutral-400 bg-background text-text-primary"
-                  placeholder="Email"
+                  placeholder={t('auth.emailPlaceholder')}
                 />
-                <label className="font-semibold text-text-primary">Password:</label>
+                <label className="font-semibold text-text-primary">{t('auth.password')}</label>
 
                 <div className="relative mb-3">
                   <input
@@ -122,7 +124,7 @@ function Login() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="rounded h-10 pl-5 pr-12 text-base w-full border-x border-y border-neutral-400 bg-background text-text-primary"
-                    placeholder="Password"
+                    placeholder={t('auth.passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -140,18 +142,18 @@ function Login() {
                     to="/forgot-password"
                     className="text-right font-light text-text-primary cursor-pointer mb-3 underline"
                   >
-                    Forget Password?
+                    {t('auth.login.forgot')}
                   </Link>
                 </div>
 
                 <button className="bg-primary rounded-md text-text-inverse font-normal text-sm h-11 hover:bg-primary-dark transition-colors">
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? t('auth.login.submitting') : t('auth.login.submit')}
                 </button>
               </div>
 
               <div className="flex items-center justify-center gap-5 my-6">
                 <div className="bg-neutral-300 h-px w-1/4"></div>
-                <p className="text-text-muted text-sm">or</p>
+                <p className="text-text-muted text-sm">{t('auth.or')}</p>
                 <div className="bg-neutral-300 h-px w-1/4"></div>
               </div>
             </form>
@@ -159,12 +161,12 @@ function Login() {
             <GoogleSignInButton onAuthenticated={handleGoogleSuccess} onError={setErrorMessage} />
             <div className="mt-5">
               <p className="cursor-pointer text-center text-text-secondary">
-                Don't have an account?{" "}
+                {t('auth.login.noAccount')}{" "}
                 <Link 
                   to="/signup" 
                   className="underline text-primary hover:text-primary-dark"
                 >
-                  Sign up
+                  {t('auth.login.signUpLink')}
                 </Link>
               </p>
             </div>

@@ -1,8 +1,10 @@
 import React from "react";
 import happyPeople from "../assets/media/happy.svg";
 import { Link } from "react-router-dom";
+import { useI18n } from "../../i18n/I18nContext";
 
 function JobSeekers() {
+  const { t } = useI18n();
   return (
     <div className="md:flex px-5 md:px-10 py-20 md:py-32 font-Poppins">
       <div className="md:w-1/2">
@@ -14,11 +16,11 @@ function JobSeekers() {
       {/* Right */}
       <div className="md:w-1/2 px-5 md:px-16">
         <div>
-          <p className="text-xl font-medium my-10 text-primary">GOT TALENT?</p>
+          <p className="text-xl font-medium my-10 text-primary">{t("home.seekers.eyebrow")}</p>
         </div>
         <div>
           <h3 className="text-4xl font-semibold mr-4 md:mr-20 my-7 text-text-primary">
-            Why job seekers love us
+            {t("home.seekers.title")}
           </h3>
         </div>
 
@@ -26,37 +28,33 @@ function JobSeekers() {
           <div className="flex items-center justify-center gap-4">
             <img src="https://assets-global.website-files.com/636dd759d71287e8ac7e6280/636dd759d71287fab77e63b3_Star.svg" />
             <p className="text-text-secondary">
-              Unique jobs at <span className="font-semibold text-text-primary">startups</span> and
-              <span className="font-semibold text-text-primary"> tech companies</span> you can't
-              find anywhere else
+              {t("home.seekers.p1a")}<span className="font-semibold text-text-primary">{t("home.seekers.p1b")}</span>{t("home.seekers.p1c")}
+              <span className="font-semibold text-text-primary">{t("home.seekers.p1d")}</span>{t("home.seekers.p1e")}
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-4">
             <img src="https://assets-global.website-files.com/636dd759d71287e8ac7e6280/636dd759d7128775587e63ec_Click.svg" />
             <p className="text-text-secondary">
-              Say goodbye to cover letters - your profile is all you need.
-              <span className="font-semibold text-text-primary"> One click to apply</span> and
-              you're done.
+              {t("home.seekers.p2a")}
+              <span className="font-semibold text-text-primary">{t("home.seekers.p2b")}</span>{t("home.seekers.p2c")}
             </p>
           </div>
 
           <div className="flex items-center justify-center gap-4">
             <img src="https://assets-global.website-files.com/636dd759d71287e8ac7e6280/636dd759d71287515d7e63b2_List.svg" />
             <p className="text-text-secondary">
-              Everything you need to know to job search - including seeing
-              <span className="font-semibold text-text-primary"> salary</span> and
-              <span className="font-semibold text-text-primary"> stock options</span> upfront when
-              looking
+              {t("home.seekers.p3a")}
+              <span className="font-semibold text-text-primary">{t("home.seekers.p3b")}</span>{t("home.seekers.p3c")}
+              <span className="font-semibold text-text-primary">{t("home.seekers.p3d")}</span>{t("home.seekers.p3e")}
             </p>
           </div>
 
           <div className=" flex items-center justify-center gap-4">
             <img src="https://assets-global.website-files.com/636dd759d71287e8ac7e6280/636dd759d71287b6b07e63ed_Connect.svg" />
             <p className="text-text-secondary">
-              Connect directly with
-              <span className="font-semibold text-text-primary"> founders</span> at top startups -
-              no third party recruiters allowed
+              {t("home.seekers.p4a")}
+              <span className="font-semibold text-text-primary">{t("home.seekers.p4b")}</span>{t("home.seekers.p4c")}
             </p>
           </div>
         </div>
@@ -65,12 +63,12 @@ function JobSeekers() {
         <div className="my-10">
           <Link to="/login">
             <button className="border border-neutral-300 text-text-primary font-medium py-2 px-5 rounded-xl md:shadow hover:bg-primary hover:border-primary hover:text-text-inverse duration-500 mr-5 md:hover:scale-105">
-              Learn more
+              {t("home.learnMore")}
             </button>
           </Link>
           <Link to="/signup">
             <button className="bg-primary text-text-inverse font-medium py-2 px-5 rounded-xl  hover:bg-primary-dark duration-500 md:hover:scale-105 md:shadow">
-              Sign up now
+              {t("home.signUpNow")}
             </button>
           </Link>
         </div>

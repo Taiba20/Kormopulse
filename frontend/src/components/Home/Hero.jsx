@@ -1,25 +1,27 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "./assets/media/heroImage.png";
+import { useI18n } from "../../i18n/I18nContext";
 
 function Hero() {
   const [isHovered, setIsHovered] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="md:flex ">
       <div className=" md:w-1/2 bg-neutral-100 ">
         <div className="flex flex-col pt-28 pl-8 md:pl-20 gap-6">
-          <p className=" font-semibold text-primary">_/ Get Hired</p>
+          <p className=" font-semibold text-primary">{t("home.hero.eyebrow")}</p>
           <div className="flex flex-col gap-4">
-            <h2 className=" text-5xl font-bold text-text-primary">The Quickest way</h2>
-            <h2 className=" text-5xl font-bold text-text-primary">to Hire!</h2>
+            <h2 className=" text-5xl font-bold text-text-primary">{t("home.hero.line1")}</h2>
+            <h2 className=" text-5xl font-bold text-text-primary">{t("home.hero.line2")}</h2>
           </div>
           <p className="font-medium text-text-secondary pr-10 md:pr-32">
-            We'll help you find{" "}
+            {t("home.hero.helpPrefix")}{" "}
             <span className="font-semibold text-text-primary">
-              Great Opportunities
+              {t("home.hero.helpHighlight")}
             </span>
-            , Receive your top new job matches directly in your inbox.
+            {t("home.hero.helpSuffix")}
           </p>
         </div>
         <div className="flex flex-col md:flex-row gap-9 md:gap-14 items-center mt-10 md:mt-8 md:pl-20 pl-0">
@@ -31,7 +33,7 @@ function Hero() {
                   boxShadow: '4px 4px 0px #9E0A57'
                 }}
               >
-                Join Our Platform{" "}
+                {t("home.hero.cta")}{" "}
                 <span className="ml-6">
                   <i className="fa-solid fa-arrow-right"></i>
                 </span>
@@ -63,9 +65,9 @@ function Hero() {
             </svg>
           </div>
           <div className="flex flex-col gap-1">
-            <p className="text-3xl font-semibold text-text-primary">1.4 Million</p>
+            <p className="text-3xl font-semibold text-text-primary">{t("home.hero.statValue")}</p>
             <p className=" text-sm font-medium text-text-secondary">
-              Candidate Placed to Top Companies
+              {t("home.hero.statLabel")}
             </p>
           </div>
         </div>

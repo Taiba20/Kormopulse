@@ -6,8 +6,12 @@ import Checkbox from "../Common/FormComponents/Checkbox";
 import CompanySearch from "../Common/CompanySearch";
 import { updateUserProfile } from "../../services/userService";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../i18n/I18nContext";
+import useProfileOptions from "../../hooks/useProfileOptions";
 
 function UserOnboarding() {
+  const { t, tOr, formatNumber } = useI18n();
+  const { locationOptions, roleOptions, experienceOptions } = useProfileOptions({ withDefaultExperience: true });
   const initialFormData = {
     location: "",
     primaryRole: "",
@@ -113,66 +117,15 @@ function UserOnboarding() {
     }
   }, [formData.notEmployed]);
 
-  const locationOptions = [
-    { value: "default", label: "Select Country" },
-    { value: "bangladesh", label: "Bangladesh" },
-    { value: "united_states", label: "United States" },
-    { value: "united_kingdom", label: "United Kingdom" },
-    { value: "australia", label: "Australia" },
-    { value: "canada", label: "Canada" },
-    { value: "germany", label: "Germany" },
-    { value: "france", label: "France" },
-    { value: "japan", label: "Japan" },
-    { value: "china", label: "China" },
-    { value: "brazil", label: "Brazil" },
-    { value: "south_africa", label: "South Africa" },
-  ];
-  const roleOptions = [
-    {
-      label: "Technical Roles",
-      options: [
-        { value: "data_scientist", label: "Data Scientist" },
-        { value: "system_admin", label: "System Administrator" },
-        { value: "software_engineer", label: "Software Engineer" },
-      ],
-    },
-    {
-      label: "Management Roles",
-      options: [
-        { value: "project_manager", label: "Project Manager" },
-        { value: "product_manager", label: "Product Manager" },
-        { value: "team_lead", label: "Team Lead" },
-      ],
-    },
-    {
-      label: "Design Roles",
-      options: [
-        { value: "ui_designer", label: "UI Designer" },
-        { value: "ux_designer", label: "UX Designer" },
-        { value: "graphic_designer", label: "Graphic Designer" },
-      ],
-    },
-  ];
-
-  const experienceOptions = [
-    { value: "default", label: "Select years of experience" },
-    { value: "0", label: "Less than 1 year" },
-    { value: "1", label: "1 year" },
-    { value: "2", label: "2 years" },
-    { value: "3", label: "3 years" },
-    { value: "4", label: "4 years" },
-    { value: "5", label: "5 years" },
-    { value: "6", label: "More than 5 years" },
-  ];
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light/10 via-background to-primary/5 flex items-center justify-center py-8 px-4">
       <div className="w-full max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-              Create your profile
+              {t("onboarding.seeker.title")}
             </h2>
             <p className="text-xl text-text-secondary max-w-2xl mx-auto">
-              Apply privately to thousands of tech companies & startups with one profile.
+              {t("onboarding.seeker.subtitle")}
             </p>
           </div>
 
@@ -182,16 +135,16 @@ function UserOnboarding() {
                 <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                   <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                     <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">1</span>
-                    Basic Information
+                    {t("onboarding.seeker.basic")}
                   </h3>
 
                   <div className="space-y-6">
                     <div className="text-center">
                       <label className="block text-lg font-medium text-text-primary mb-3">
-                        <span className="text-red-500 mr-1">*</span>Where are you based?
+                        <span className="text-red-500 mr-1">*</span>{t("onboarding.seeker.whereBased")}
                       </label>
                       <div className="flex justify-center">
-                        <CheckBoxLabel text={formData.location} />
+                        <CheckBoxLabel text={formData.location && formData.location !== "default" ? tOr(`profile.countries.${formData.location}`, formData.location) : ""} />
                       </div>
                       <div className="flex justify-center mt-2">
                         <SelectInput
@@ -206,10 +159,10 @@ function UserOnboarding() {
 
                     <div className="text-center">
                       <label className="block text-lg font-medium text-text-primary mb-3">
-                        <span className="text-red-500 mr-1">*</span>What best describes your current role?
+                        <span className="text-red-500 mr-1">*</span>{t("onboarding.seeker.currentRole")}
                       </label>
                       <div className="flex justify-center">
-                        <CheckBoxLabel text={formData.primaryRole} />
+                        <CheckBoxLabel text={tOr(`profile.roles.${formData.primaryRole}`, formData.primaryRole)} />
                       </div>
                       <div className="flex justify-center mt-2">
                         <SelectInput
@@ -225,11 +178,11 @@ function UserOnboarding() {
 
                     <div className="text-center">
                       <label className="block text-lg font-medium text-text-primary mb-3">
-                        <span className="text-red-500 mr-1">*</span>How many years of experience do you have?
+                        <span className="text-red-500 mr-1">*</span>{t("onboarding.seeker.years")}
                       </label>
                       <div className="flex justify-center">
                         <CheckBoxLabel
-                          text={formData.yearsOfExperience && `${formData.yearsOfExperience} years`}
+                          text={formData.yearsOfExperience && formData.yearsOfExperience !== "default" && t("onboarding.seeker.yearsUnit", { n: formatNumber(Number(formData.yearsOfExperience)) })}
                         />
                       </div>
                       <div className="flex justify-center mt-2">
@@ -248,15 +201,15 @@ function UserOnboarding() {
                 <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                   <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                     <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">2</span>
-                    Work Experience
+                    {t("onboarding.seeker.work")}
                   </h3>
 
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      <span className="text-red-500 mr-1">*</span>Where do you currently work?
+                      <span className="text-red-500 mr-1">*</span>{t("onboarding.seeker.currentlyWork")}
                     </label>
                     <p className="text-sm text-text-secondary mb-4 max-w-md mx-auto">
-                      Your company will never see that you're looking for a job
+                      {t("onboarding.seeker.privacy")}
                     </p>
 
                     <div className="flex justify-center mb-4">
@@ -266,19 +219,19 @@ function UserOnboarding() {
                     <div className={formData.notEmployed ? "hidden" : "space-y-4"}>
                       <div className="flex justify-center">
                         <InputField
-                          label="Job Title"
+                          label={t("onboarding.seeker.jobTitle")}
                           id="title"
                           onChange={handleInputChange}
                           value={formData.title}
                           isRequired={!formData.notEmployed}
-                          placeholder="Software Engineer"
+                          placeholder={t("onboarding.seeker.jobTitlePlaceholder")}
                           className="w-full md:w-1/2"
                         />
                       </div>
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-text-primary text-center">
-                          Company <span className="text-red-500">*</span>
+                          {t("onboarding.seeker.company")} <span className="text-red-500">*</span>
                         </label>
                         <div className="flex justify-center">
                           {showDropdown ? (
@@ -291,7 +244,7 @@ function UserOnboarding() {
                               <div className="flex items-center">
                                 <img
                                   src={formData.companyLogo}
-                                  alt={formData.companyName}
+                                  alt=""
                                   className="w-12 h-12 rounded-full mr-4 border-2 border-primary/20"
                                 />
                                 <span className="font-semibold text-text-primary text-lg">
@@ -321,7 +274,7 @@ function UserOnboarding() {
                     <div className="flex justify-center mt-4">
                       <div className="flex items-center space-x-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200 max-w-md">
                         <Checkbox
-                          label="I'm not currently employed"
+                          label={t("onboarding.seeker.notEmployed")}
                           name="notEmployed"
                           id="notEmployed"
                           checked={formData.notEmployed}
@@ -335,12 +288,12 @@ function UserOnboarding() {
                 <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                   <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                     <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">3</span>
-                    Social Profiles
+                    {t("onboarding.seeker.social")}
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InputField
-                      label="LinkedIn Profile"
+                      label={t("onboarding.seeker.linkedin")}
                       id="linkedin"
                       value={formData.linkedin}
                       onChange={handleInputChange}
@@ -348,7 +301,7 @@ function UserOnboarding() {
                       className="w-full"
                     />
                     <InputField
-                      label="GitHub Profile"
+                      label={t("onboarding.seeker.github")}
                       id="github"
                       value={formData.github}
                       onChange={handleInputChange}
@@ -356,7 +309,7 @@ function UserOnboarding() {
                       className="w-full"
                     />
                     <InputField
-                      label="Twitter Profile"
+                      label={t("onboarding.seeker.twitter")}
                       id="twitter"
                       value={formData.twitter}
                       onChange={handleInputChange}
@@ -364,7 +317,7 @@ function UserOnboarding() {
                       className="w-full"
                     />
                     <InputField
-                      label="Personal Website"
+                      label={t("onboarding.seeker.website")}
                       id="website"
                       value={formData.website}
                       onChange={handleInputChange}
@@ -380,7 +333,7 @@ function UserOnboarding() {
                   type="submit"
                   className="px-12 py-4 bg-gradient-to-r from-primary to-primary-light text-text-inverse text-xl font-semibold rounded-xl hover:from-primary-dark hover:to-primary transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 border border-primary-dark/20"
                 >
-                  Create your profile
+                  {t("onboarding.seeker.submit")}
                 </button>
               </div>
             </div>

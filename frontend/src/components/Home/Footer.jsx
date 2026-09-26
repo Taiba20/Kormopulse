@@ -1,5 +1,7 @@
 import React from "react";
+import { useI18n } from "../../i18n/I18nContext";
 function Footer() {
+  const { t } = useI18n();
   return (
     <div className="md:flex justify-between py-12 border-t border-neutral-300  ">
       <div className="md:w-2/5 ml-6 md:ml-20 flex flex-col gap-2 py-4 md:py-0">
@@ -12,68 +14,68 @@ function Footer() {
       </div>
       <div className="md:flex justify-between md:w-3/5 px-10 md:px-0">
         <div className="flex flex-col gap-2.5 py-5 md:py-0">
-          <h3 className="font-semibold md:text-base text-xl text-text-primary">For Candidates</h3>
+          <h3 className="font-semibold md:text-base text-xl text-text-primary">{t("footer.forCandidates")}</h3>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Overview
+            {t("footer.overview")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Startup Jobs
+            {t("footer.startupJobs")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Web3 Jobs
+            {t("footer.web3Jobs")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Featured
+            {t("footer.featured")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Startup Hiring Data
+            {t("footer.hiringData")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Tech Startups
+            {t("footer.techStartups")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Remote
+            {t("footer.remote")}
           </p>
         </div>
         <div className="flex flex-col gap-2.5 py-5 md:py-0">
           <h3 className="font-semibold md:text-base text-xl text-text-primary">
-            For Recruiters
+            {t("footer.forRecruiters")}
           </h3>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Overview
+            {t("footer.overview")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Recruit Pro
+            {t("footer.recruitPro")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Curated
+            {t("footer.curated")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            RecruiterCloud
+            {t("footer.recruiterCloud")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Hire Developers
+            {t("footer.hireDevelopers")}
           </p>
           <p className=" cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Pricing
+            {t("footer.pricing")}
           </p>
         </div>
         <div className="flex flex-col gap-2.5 py-5 md:py-0">
-          <h3 className="font-semibold md:text-base text-xl text-text-primary">Company</h3>
+          <h3 className="font-semibold md:text-base text-xl text-text-primary">{t("footer.company")}</h3>
           <p className="cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            About
+            {t("footer.about")}
           </p>
           <p className="cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            AngelList Venture
+            {t("footer.ventures")}
           </p>
           <p className="cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Blog
+            {t("footer.blog")}
           </p>
           <p className="cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Terms & Risks
+            {t("footer.terms")}
           </p>
           <p className="cursor-pointer text-lg md:text-base hover:underline hover:text-primary text-text-secondary">
-            Privacy & Cookies
+            {t("footer.privacy")}
           </p>
         </div>
         <div></div>

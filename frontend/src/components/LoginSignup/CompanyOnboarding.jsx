@@ -3,8 +3,10 @@ import InputField from "../Common/FormComponents/InputField";
 import CompanySearch from "../Common/CompanySearch";
 import { updateUserProfile, userService } from "../../services/userService";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../i18n/I18nContext";
 
 function CompanyOnboarding() {
+  const { t } = useI18n();
   const [companyProfile, setCompanyProfile] = useState({
     companyName: "",
     companyDescription: "",
@@ -57,7 +59,7 @@ function CompanyOnboarding() {
     
     // Validate required fields
     if (!companyProfile.companyName || companyProfile.companyName.trim() === "") {
-      alert("Please enter a company name");
+      alert(t("company.nameRequired"));
       return;
     }
     
@@ -104,13 +106,13 @@ function CompanyOnboarding() {
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert(t('company.notImage'));
       return;
     }
 
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      alert(t('company.tooBig'));
       return;
     }
 
@@ -123,10 +125,10 @@ function CompanyOnboarding() {
         companyLogo: response.data.user.userProfile.companyLogo || response.data.profilePicture
       }));
       
-      alert('Company logo updated successfully!');
+      alert(t('company.logoUpdated'));
     } catch (error) {
       console.error('Error uploading logo:', error);
-      alert('Failed to upload logo. Please try again.');
+      alert(t('company.logoFailed'));
     } finally {
       setLogoUploading(false);
     }
@@ -137,10 +139,10 @@ function CompanyOnboarding() {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-12">
           <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-            Complete your profile
+            {t("onboarding.company.title")}
           </h2>
           <p className="text-xl text-text-secondary max-w-2xl mx-auto">
-            Find the best fit for your organisation among thousands of talents
+            {t("onboarding.company.subtitle")}
           </p>
         </div>
 
@@ -150,13 +152,13 @@ function CompanyOnboarding() {
               <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                 <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                   <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">1</span>
-                  Company Information
+                  {t("onboarding.company.info")}
                 </h3>
 
                 <div className="space-y-4">
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      <span className="text-red-500 mr-1">*</span>Company Name
+                      <span className="text-red-500 mr-1">*</span>{t("onboarding.company.name")}
                     </label>
                     <div className="flex justify-center">
                       {showDropdown ? (
@@ -166,15 +168,15 @@ function CompanyOnboarding() {
                             width="w-full"
                           />
                           <div className="text-center">
-                            <span className="text-sm text-gray-500">or</span>
+                            <span className="text-sm text-gray-500">{t("onboarding.company.or")}</span>
                           </div>
                           <InputField
-                            label="Enter Company Name Manually"
+                            label={t("onboarding.company.manual")}
                             id="companyName"
                             name="companyName"
                             value={companyProfile.companyName}
                             onChange={handleChange}
-                            placeholder="Enter your company name"
+                            placeholder={t("company.namePlaceholder")}
                             className="w-full"
                           />
                         </div>
@@ -183,7 +185,7 @@ function CompanyOnboarding() {
                           <div className="flex items-center">
                             <img
                               src={companyProfile.companyLogo}
-                              alt={companyProfile.companyName}
+                              alt=""
                               className="w-12 h-12 rounded-full mr-4 border-2 border-primary/20"
                             />
                             <span className="font-semibold text-text-primary text-lg">
@@ -206,13 +208,13 @@ function CompanyOnboarding() {
 
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      Company Logo
+                      {t("onboarding.company.logo")}
                     </label>
                     <div className="flex flex-col items-center space-y-4">
                       <div className="w-24 h-24 rounded-full border-4 border-primary/20 overflow-hidden bg-neutral-100">
                         <img
                           src={companyProfile.companyLogo}
-                          alt="Company Logo"
+                          alt=""
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.src = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
@@ -231,16 +233,16 @@ function CompanyOnboarding() {
                           htmlFor="logo-upload"
                           className={`px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors cursor-pointer ${logoUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                          {logoUploading ? t('company.uploading') : t('company.upload')}
                         </label>
-                        <p className="text-sm text-text-secondary">Max 5MB, JPG/PNG</p>
+                        <p className="text-sm text-text-secondary">{t('company.logoHint')}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      Industry
+                      {t("onboarding.company.industry")}
                     </label>
                     <div className="flex justify-center">
                       <InputField
@@ -248,7 +250,7 @@ function CompanyOnboarding() {
                         name="industry"
                         value={companyProfile.industry}
                         onChange={handleChange}
-                        placeholder="e.g., Technology, Healthcare, Finance"
+                        placeholder={t("onboarding.company.industryPlaceholder")}
                         className="w-full md:w-1/2"
                       />
                     </div>
@@ -256,7 +258,7 @@ function CompanyOnboarding() {
 
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      Company Description
+                      {t("onboarding.company.description")}
                     </label>
                     <div className="flex justify-center">
                       <textarea
@@ -264,7 +266,7 @@ function CompanyOnboarding() {
                         name="companyDescription"
                         value={companyProfile.companyDescription}
                         onChange={handleChange}
-                        placeholder="Tell us about your company, its mission, values, and what makes it unique"
+                        placeholder={t("company.descriptionPlaceholder")}
                         rows="4"
                         className="w-full md:w-1/2 px-4 py-3 text-base border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-200 bg-background text-text-primary placeholder-text-secondary/60 resize-none"
                       />
@@ -273,7 +275,7 @@ function CompanyOnboarding() {
 
                   <div className="text-center">
                     <label className="block text-lg font-medium text-text-primary mb-3">
-                      Contact Number
+                      {t("onboarding.company.contact")}
                     </label>
                     <div className="flex justify-center">
                       <InputField
@@ -281,7 +283,7 @@ function CompanyOnboarding() {
                         name="contactNumber"
                         value={companyProfile.contactNumber}
                         onChange={handleChange}
-                        placeholder="+91 1234567890"
+                        placeholder={t("onboarding.company.contactPlaceholder")}
                         className="w-full md:w-1/2"
                       />
                     </div>
@@ -292,33 +294,33 @@ function CompanyOnboarding() {
               <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                 <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                   <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">2</span>
-                  Address
+                  {t("onboarding.company.address")}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <InputField
-                    label="City"
+                    label={t("onboarding.company.city")}
                     id="address.city"
                     name="address.city"
                     value={companyProfile.address.city}
                     onChange={handleChange}
-                    placeholder="Enter city"
+                    placeholder={t("onboarding.company.cityPlaceholder")}
                   />
                   <InputField
-                    label="State"
+                    label={t("onboarding.company.state")}
                     id="address.state"
                     name="address.state"
                     value={companyProfile.address.state}
                     onChange={handleChange}
-                    placeholder="Enter state"
+                    placeholder={t("onboarding.company.statePlaceholder")}
                   />
                   <InputField
-                    label="Country"
+                    label={t("onboarding.company.country")}
                     id="address.country"
                     name="address.country"
                     value={companyProfile.address.country}
                     onChange={handleChange}
-                    placeholder="Enter country"
+                    placeholder={t("onboarding.company.countryPlaceholder")}
                   />
                 </div>
               </div>
@@ -326,25 +328,25 @@ function CompanyOnboarding() {
               <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                 <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                   <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">3</span>
-                  Company Size
+                  {t("onboarding.company.size")}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
-                    label="Company Size From"
+                    label={t("onboarding.company.sizeFrom")}
                     id="companySize.from"
                     name="companySize.from"
                     value={companyProfile.companySize.from}
                     onChange={handleChange}
-                    placeholder="Enter company size (from)"
+                    placeholder={t("onboarding.company.sizeFromPlaceholder")}
                   />
                   <InputField
-                    label="Company Size To"
+                    label={t("onboarding.company.sizeTo")}
                     id="companySize.to"
                     name="companySize.to"
                     value={companyProfile.companySize.to}
                     onChange={handleChange}
-                    placeholder="Enter company size (to)"
+                    placeholder={t("onboarding.company.sizeToPlaceholder")}
                   />
                 </div>
               </div>
@@ -352,12 +354,12 @@ function CompanyOnboarding() {
               <div className="bg-gradient-to-r from-primary/5 to-primary-light/5 rounded-xl p-6 border border-primary/10">
                 <h3 className="text-2xl font-semibold text-text-primary mb-6 flex items-center justify-center">
                   <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-text-inverse text-sm font-bold mr-3">4</span>
-                  Online Presence
+                  {t("onboarding.company.online")}
                 </h3>
 
                 <div className="space-y-4">
                   <InputField
-                    label="Company Website"
+                    label={t("onboarding.company.website")}
                     id="companyWebsite"
                     name="companyWebsite"
                     value={companyProfile.companyWebsite}
@@ -365,7 +367,7 @@ function CompanyOnboarding() {
                     placeholder="https://www.companywebsite.com"
                   />
                   <InputField
-                    label="LinkedIn"
+                    label={t("onboarding.company.linkedin")}
                     id="companySocialProfiles.linkedIn"
                     name="companySocialProfiles.linkedIn"
                     value={companyProfile.companySocialProfiles.linkedIn}
@@ -373,7 +375,7 @@ function CompanyOnboarding() {
                     placeholder="https://www.linkedin.com/company/username"
                   />
                   <InputField
-                    label="Twitter"
+                    label={t("onboarding.company.twitter")}
                     id="companySocialProfiles.twitter"
                     name="companySocialProfiles.twitter"
                     onChange={handleChange}
@@ -388,7 +390,7 @@ function CompanyOnboarding() {
                 type="submit"
                 className="px-12 py-4 bg-gradient-to-r from-primary to-primary-light text-text-inverse text-xl font-semibold rounded-xl hover:from-primary-dark hover:to-primary transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 border border-primary-dark/20"
               >
-                Create your profile
+                {t("onboarding.company.submit")}
               </button>
             </div>
           </div>
