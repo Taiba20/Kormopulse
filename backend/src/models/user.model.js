@@ -10,6 +10,8 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true },
     role: { type: String, required: true, enum: ["jobSeeker", "employer", "admin"] },
     refreshToken: String,
+    // Interface language ("en" | "bn"); emails and notifications are written in it
+    language: { type: String, enum: ["en", "bn"], default: "en" },
     // undefined (legacy accounts) counts as verified; new accounts start as false
     emailVerified: { type: Boolean },
     emailVerificationCodeHash: { type: String, select: false },

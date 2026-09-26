@@ -22,6 +22,7 @@ import {
   verifyEmail,
   resendVerification,
   googleLogin,
+  updateLanguage,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -33,6 +34,7 @@ import {
   resetPasswordSchema,
   verifyEmailSchema,
   googleLoginSchema,
+  updateLanguageSchema,
 } from "../validators/auth.schemas.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -62,5 +64,6 @@ router.route("/reset-password").post(authLimiter, validate(resetPasswordSchema),
 router.route("/verify-email").post(authLimiter, verifyJWT, validate(verifyEmailSchema), verifyEmail);
 router.route("/resend-verification").post(authLimiter, verifyJWT, resendVerification);
 router.route("/google").post(authLimiter, validate(googleLoginSchema), googleLogin);
+router.route("/language").patch(verifyJWT, validate(updateLanguageSchema), updateLanguage);
 
 export default router;

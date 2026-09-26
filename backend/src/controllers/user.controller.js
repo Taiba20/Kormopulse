@@ -69,6 +69,7 @@ const sendVerificationEmail = (user, code) =>
     name: user.name,
     code,
     expiresInMinutes: OTP_TTL_MINUTES,
+    lang: user.language,
   });
 
 const setAuthCookies = (res, accessToken, refreshToken) =>
@@ -77,7 +78,7 @@ const setAuthCookies = (res, accessToken, refreshToken) =>
     .cookie("refreshToken", refreshToken, cookieOptions);
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body; // validated by zod: role is jobSeeker | employer
+  const { name, email, password, role, language } = req.body; // validated by zod: role is jobSeeker | employer
 
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
@@ -91,6 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
     password,
     role,
+    language,
     emailVerified: false,
   });
 
@@ -493,6 +495,12 @@ const analyzeSkillGap = asyncHandler(async (req, res) => {
 });
 
 // Change password
+// Stores the interface language so emails and notifications match it
+const updateLanguage = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, { language: req.body.language });
+  return res.status(200).json(new ApiResponse(200, { language: req.body.language }, "Language updated"));
+});
+
 const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user._id;
@@ -576,6 +584,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     name: user.name,
     code,
     expiresInMinutes: OTP_TTL_MINUTES,
+    lang: user.language,
   });
 
   return res.status(200).json(genericResponse);
@@ -644,8 +653,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   void notify(user._id, {
     type: "system",
-    title: "Email verified",
-    message: "Your email address is verified. You now have full access to Kormopulse.",
+    key: "emailVerified",
   });
 
   return res.status(200).json(new ApiResponse(200, { emailVerified: true }, "Email verified successfully"));
@@ -668,7 +676,7 @@ const resendVerification = asyncHandler(async (req, res) => {
 // ---- Google sign-in ---------------------------------------------------------
 
 const googleLogin = asyncHandler(async (req, res) => {
-  const { credential, role } = req.body;
+  const { credential, role, language } = req.body;
 
   let profile;
   try {
@@ -702,6 +710,7 @@ const googleLogin = asyncHandler(async (req, res) => {
       // Google accounts never use a password, but the schema requires one
       password: crypto.randomBytes(32).toString("hex"),
       role,
+      language,
       emailVerified: true,
       googleId: profile.sub,
     });
@@ -742,6 +751,7 @@ export {
   userPublicProfile,
   analyzeSkillGap,
   changePassword,
+  updateLanguage,
   forgotPassword,
   resetPassword,
   verifyEmail,

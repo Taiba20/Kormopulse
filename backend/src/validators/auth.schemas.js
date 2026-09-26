@@ -21,11 +21,15 @@ export const signupRole = z.enum(["jobSeeker", "employer"], {
   error: "Role must be jobSeeker or employer",
 });
 
+// Interface language chosen in the app; emails and notifications are written in it
+export const languageEnum = z.enum(["en", "bn"], { error: "Language must be en or bn" });
+
 export const signupSchema = z.object({
   name: z.string({ error: "Name is required" }).trim().min(2, { error: "Name is too short" }).max(80),
   email,
   password,
   role: signupRole,
+  language: languageEnum.optional(),
 });
 
 export const loginSchema = z.object({
@@ -47,4 +51,7 @@ export const verifyEmailSchema = z.object({ code });
 export const googleLoginSchema = z.object({
   credential: z.string({ error: "Google credential is required" }).min(10),
   role: signupRole.optional(),
+  language: languageEnum.optional(),
 });
+
+export const updateLanguageSchema = z.object({ language: languageEnum });
