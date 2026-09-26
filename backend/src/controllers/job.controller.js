@@ -7,12 +7,16 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { generateJobDescription, generateJobRecommendations, matchCandidates } from "../utils/groqAi.service.js";
+import { sendApplicationReceived, sendNewApplicationAlert } from "../utils/mail.service.js";
+import { notify } from "../utils/notify.js";
+import { summarizeRatings } from "./review.controller.js";
+import { notifyInstantAlerts } from "../services/alert.service.js";
 import {
-  sendApplicationReceived,
-  sendNewApplicationAlert,
-  sendShortlisted,
-  sendHired,
-} from "../utils/mail.service.js";
+  assertJobOwner,
+  changeApplicationStatus,
+  findApplication,
+  getCompanyName,
+} from "../services/application.service.js";
 import { JSDOM } from "jsdom";
 import createDOMPurify from "dompurify";
 
@@ -26,11 +30,6 @@ const ping = (req, res) => {
 
 const authPing = (req, res) => {
   res.send("Job Auth is working");
-};
-
-const getCompanyName = async (job) => {
-  const company = await CompanyProfile.findById(job.company).select("companyName");
-  return company?.companyName || "the employer";
 };
 
 // Create a new job posting
@@ -113,6 +112,7 @@ const createJob = asyncHandler(async (req, res) => {
 
   // Create job with processed data
   const job = await Job.create(processedJobData);
+  void notifyInstantAlerts(job);
 
   // Populate the job with company details
   const populatedJob = await Job.findById(job._id)
@@ -430,6 +430,7 @@ const applyForJob = asyncHandler(async (req, res) => {
     coverLetter: coverLetter,
     resume: resume,
     status: "pending", // Use correct enum value for Application model
+    statusHistory: [{ status: "pending", changedAt: new Date(), changedBy: _id, note: "Application submitted" }],
   });
   console.log("Application created:", application._id);
 
@@ -460,6 +461,20 @@ const applyForJob = asyncHandler(async (req, res) => {
     employerName: employer?.name,
     applicantName: req.user.name,
     jobTitle: job.title,
+  });
+  void notify(_id, {
+    type: "application_status",
+    title: "Application submitted",
+    message: `Your application for ${job.title} at ${companyName} was submitted.`,
+    link: "/jobseeker/applications",
+    data: { applicationId: application._id, jobId: job._id },
+  });
+  void notify(job.postedBy, {
+    type: "application_received",
+    title: "New application received",
+    message: `${req.user.name} applied for ${job.title}.`,
+    link: `/pipeline/${job._id}`,
+    data: { applicationId: application._id, jobId: job._id },
   });
 
   console.log("=== Apply for Job Success ===");
@@ -573,6 +588,8 @@ const getCompanies = asyncHandler(async (req, res) => {
     doneOnboarding: true,
   }).select("companyName companyLogo industry companyWebsite companySize companySocialProfiles address");
 
+  const ratings = await summarizeRatings(companies.map((c) => c._id));
+
   // Get job count for each company and convert to plain objects
   const companiesWithJobCount = await Promise.all(
     companies.map(async (company) => {
@@ -582,6 +599,8 @@ const getCompanies = asyncHandler(async (req, res) => {
       });
       const companyObject = company.toObject();
       companyObject.jobCount = jobCount;
+      const rating = ratings.get(String(company._id));
+      companyObject.rating = rating ? { average: rating.average, count: rating.count } : { average: 0, count: 0 };
       return companyObject;
     })
   );
@@ -820,40 +839,11 @@ const getMyCompanyApplications = asyncHandler(async (req, res) => {
 // Shortlist a candidate using Application model
 const shortlistCandidate = asyncHandler(async (req, res) => {
   const { jobId, applicantId } = req.body;
-  const userId = req.user._id;
+  const job = await assertJobOwner(jobId, req.user._id);
+  const application = await findApplication(jobId, applicantId);
 
-  const job = await Job.findById(jobId);
-  if (!job || job.postedBy.toString() !== userId.toString()) {
-    throw new ApiError(403, "Unauthorized or job not found");
-  }
-
-  // Update Application model
-  const application = await Application.findOneAndUpdate(
-    { job: jobId, applicant: applicantId },
-    { status: "shortlisted", reviewedAt: new Date(), reviewedBy: userId },
-    { new: true }
-  ).populate('applicant', 'name email');
-
-  if (!application) {
-    throw new ApiError(404, "Application not found");
-  }
-
-  // Also update the status in Job.applicants array to keep both models in sync
-  const applicantIndex = job.applicants.findIndex(app =>
-    app.user.toString() === applicantId.toString()
-  );
-
-  if (applicantIndex !== -1) {
-    job.applicants[applicantIndex].status = "interviewed"; // Map "shortlisted" to "interviewed" for Job model
-    await job.save();
-  }
-
-  void sendShortlisted({
-    to: application.applicant?.email,
-    name: application.applicant?.name,
-    jobTitle: job.title,
-    companyName: await getCompanyName(job),
-  });
+  await changeApplicationStatus({ application, job, status: "shortlisted", actorId: req.user._id });
+  await application.populate("applicant", "name email");
 
   return res.status(200).json(
     new ApiResponse(200, application, "Candidate shortlisted successfully")
@@ -863,33 +853,10 @@ const shortlistCandidate = asyncHandler(async (req, res) => {
 // Remove from shortlist
 const removeFromShortlist = asyncHandler(async (req, res) => {
   const { jobId, applicantId } = req.body;
-  const userId = req.user._id;
+  const job = await assertJobOwner(jobId, req.user._id);
+  const application = await findApplication(jobId, applicantId);
 
-  const job = await Job.findById(jobId);
-  if (!job || job.postedBy.toString() !== userId.toString()) {
-    throw new ApiError(403, "Unauthorized or job not found");
-  }
-
-  // Update Application model
-  const application = await Application.findOneAndUpdate(
-    { job: jobId, applicant: applicantId },
-    { status: "reviewed", reviewedAt: new Date(), reviewedBy: userId },
-    { new: true }
-  );
-
-  if (!application) {
-    throw new ApiError(404, "Application not found");
-  }
-
-  // Also update the status in Job.applicants array to keep both models in sync
-  const applicantIndex = job.applicants.findIndex(app =>
-    app.user.toString() === applicantId.toString()
-  );
-
-  if (applicantIndex !== -1) {
-    job.applicants[applicantIndex].status = "reviewed"; // Map "reviewed" to "reviewed" for Job model
-    await job.save();
-  }
+  await changeApplicationStatus({ application, job, status: "reviewed", actorId: req.user._id, silent: true });
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Candidate removed from shortlist")
@@ -899,40 +866,16 @@ const removeFromShortlist = asyncHandler(async (req, res) => {
 // Reject candidate
 const rejectCandidate = asyncHandler(async (req, res) => {
   const { jobId, applicantId } = req.body;
-  const userId = req.user._id;
+  const job = await assertJobOwner(jobId, req.user._id);
+  const application = await findApplication(jobId, applicantId);
 
-  const job = await Job.findById(jobId);
-  if (!job || job.postedBy.toString() !== userId.toString()) {
-    throw new ApiError(403, "Unauthorized or job not found");
-  }
-
-  // Update Application model
-  const application = await Application.findOneAndUpdate(
-    { job: jobId, applicant: applicantId },
-    { status: "rejected", reviewedAt: new Date(), reviewedBy: userId },
-    { new: true }
-  );
-
-  if (!application) {
-    throw new ApiError(404, "Application not found");
-  }
-
-  // Also update the status in Job.applicants array to keep both models in sync
-  const applicantIndex = job.applicants.findIndex(app =>
-    app.user.toString() === applicantId.toString()
-  );
-
-  if (applicantIndex !== -1) {
-    job.applicants[applicantIndex].status = "rejected"; // Map "rejected" to "rejected" for Job model
-    await job.save();
-  }
+  await changeApplicationStatus({ application, job, status: "rejected", actorId: req.user._id });
 
   return res.status(200).json(
     new ApiResponse(200, {}, "Candidate rejected")
   );
 });
 
-// Get applications for a job using Application model
 const getJobApplicationsViaApplication = asyncHandler(async (req, res) => {
   const { id: jobId } = req.params;
   const userId = req.user._id;
@@ -997,39 +940,17 @@ const getJobRecommendations = asyncHandler(async (req, res) => {
   );
 });
 
-// Hire a candidate (delete application after hiring)
+// Hire a candidate (marks the application as hired)
 const hireCandidate = asyncHandler(async (req, res) => {
   const { jobId, applicantId } = req.body;
-  const employerId = req.user._id;
+  const job = await assertJobOwner(jobId, req.user._id);
+  const application = await findApplication(jobId, applicantId);
 
-  console.log("Hiring candidate:", { jobId, applicantId, employerId });
-
-  // Verify job belongs to the employer
-  const job = await Job.findById(jobId);
-  if (!job || job.postedBy.toString() !== employerId.toString()) {
-    throw new ApiError(403, "You can only hire candidates for your own job postings");
-  }
-
-  // Find and delete the application
-  const application = await Application.findOneAndDelete({
-    job: jobId,
-    applicant: applicantId
-  });
-
-  if (!application) {
-    throw new ApiError(404, "Application not found");
-  }
-
-  const hiredUser = await User.findById(applicantId).select("name email");
-  void sendHired({
-    to: hiredUser?.email,
-    name: hiredUser?.name,
-    jobTitle: job.title,
-    companyName: await getCompanyName(job),
-  });
+  // The application is kept (status "hired") so history, analytics and time-to-hire stay accurate
+  await changeApplicationStatus({ application, job, status: "hired", actorId: req.user._id });
 
   return res.status(200).json(
-    new ApiResponse(200, {}, "Candidate hired successfully. Application has been removed.")
+    new ApiResponse(200, {}, "Candidate hired successfully")
   );
 });
 

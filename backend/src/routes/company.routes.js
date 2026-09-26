@@ -10,7 +10,8 @@ import {
   shortlistCandidate,
   getCandidateMatches,
 } from "../controllers/company.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, requireRole } from "../middlewares/auth.middleware.js";
+import { getCompanyAnalytics } from "../controllers/analytics.controller.js";
 const router = Router();
 
 router.route("/listings").get(verifyJWT, getAllJobListings);
@@ -28,5 +29,6 @@ router
 router.route("/shortlist-candidate").post(verifyJWT, shortlistCandidate);
 router.route("/remove-from-shortlisted").post(verifyJWT, removeFromShortlist);
 router.route("/candidate-matches/:jobId").get(verifyJWT, getCandidateMatches);
+router.route("/analytics").get(verifyJWT, requireRole("employer"), getCompanyAnalytics);
 
 export default router;
