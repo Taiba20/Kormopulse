@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { userService } from '../../services/userService';
 import { messageService } from '../../services/messageService';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../../i18n/I18nContext';
 
 function OverviewTab() {
+  const { t, tOr, formatDate, formatNumber } = useI18n();
   const [stats, setStats] = useState({
     applications: 0,
     savedJobs: 0,
@@ -79,8 +81,8 @@ function OverviewTab() {
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary/90 to-primary-light/90 rounded-lg p-6 text-white mb-6">
-        <h1 className="text-2xl font-bold mb-2">Welcome to Your Dashboard!</h1>
-        <p className="text-text-inverse/80">Track your job search progress and stay organized.</p>
+        <h1 className="text-2xl font-bold mb-2">{t('seeker.overview.welcome')}</h1>
+        <p className="text-text-inverse/80">{t('seeker.overview.welcomeSub')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -91,8 +93,8 @@ function OverviewTab() {
               <i className="fas fa-paper-plane text-lg"></i>
             </div>
             <div className="ml-4">
-              <h3 className="text-xl font-bold text-neutral-900">{stats.applications}</h3>
-              <p className="text-sm text-neutral-600">Applications</p>
+              <h3 className="text-xl font-bold text-neutral-900">{formatNumber(stats.applications)}</h3>
+              <p className="text-sm text-neutral-600">{t('seeker.overview.applications')}</p>
             </div>
           </div>
         </div>
@@ -103,8 +105,8 @@ function OverviewTab() {
               <i className="fas fa-bookmark text-lg"></i>
             </div>
             <div className="ml-4">
-              <h3 className="text-xl font-bold text-gray-900">{stats.savedJobs}</h3>
-              <p className="text-sm text-gray-600">Saved Jobs</p>
+              <h3 className="text-xl font-bold text-gray-900">{formatNumber(stats.savedJobs)}</h3>
+              <p className="text-sm text-gray-600">{t('seeker.overview.savedJobs')}</p>
             </div>
           </div>
         </div>
@@ -115,8 +117,8 @@ function OverviewTab() {
               <i className="fas fa-clock text-lg"></i>
             </div>
             <div className="ml-4">
-              <h3 className="text-xl font-bold text-gray-900">{stats.pendingApplications}</h3>
-              <p className="text-sm text-gray-600">Pending</p>
+              <h3 className="text-xl font-bold text-gray-900">{formatNumber(stats.pendingApplications)}</h3>
+              <p className="text-sm text-gray-600">{t('seeker.overview.pending')}</p>
             </div>
           </div>
         </div>
@@ -127,8 +129,8 @@ function OverviewTab() {
               <i className="fas fa-check-circle text-lg"></i>
             </div>
             <div className="ml-4">
-              <h3 className="text-xl font-bold text-gray-900">{stats.shortlistedApplications}</h3>
-              <p className="text-sm text-gray-600">Shortlisted</p>
+              <h3 className="text-xl font-bold text-gray-900">{formatNumber(stats.shortlistedApplications)}</h3>
+              <p className="text-sm text-gray-600">{t('seeker.overview.shortlisted')}</p>
             </div>
           </div>
         </div>
@@ -139,8 +141,8 @@ function OverviewTab() {
               <i className="fas fa-envelope text-lg"></i>
             </div>
             <div className="ml-4">
-              <h3 className="text-xl font-bold text-gray-900">{stats.unreadMessages}</h3>
-              <p className="text-sm text-gray-600">New Messages</p>
+              <h3 className="text-xl font-bold text-gray-900">{formatNumber(stats.unreadMessages)}</h3>
+              <p className="text-sm text-gray-600">{t('seeker.overview.newMessages')}</p>
             </div>
           </div>
         </div>
@@ -152,12 +154,12 @@ function OverviewTab() {
         <div className="bg-white rounded-lg shadow-md">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('seeker.overview.recentApplications')}</h2>
               <Link
                 to="/jobseeker/applications"
                 className="text-sm text-primary hover:text-primary-dark font-medium"
               >
-                View All
+                {t('seeker.overview.viewAll')}
               </Link>
             </div>
           </div>
@@ -165,13 +167,13 @@ function OverviewTab() {
             {recentApplications.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <i className="fas fa-paper-plane text-3xl mb-4 text-gray-300"></i>
-                <p className="mb-4">No applications yet</p>
+                <p className="mb-4">{t('seeker.overview.noApplications')}</p>
                 <Link
                   to="/jobs"
                   className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
                 >
                   <i className="fas fa-search mr-2"></i>
-                  Browse Jobs
+                  {t('seeker.overview.browseJobs')}
                 </Link>
               </div>
             ) : (
@@ -181,17 +183,17 @@ function OverviewTab() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900 mb-1">
-                          {application.job?.title || 'Job Title'}
+                          {application.job?.title || t('seeker.overview.jobTitleFallback')}
                         </h3>
                         <p className="text-sm text-gray-600 mb-2">
-                          {application.job?.company?.name || application.job?.company || 'Company'}
+                          {application.job?.company?.name || application.job?.company || t('seeker.overview.companyFallback')}
                         </p>
                         <div className="flex items-center space-x-3">
                           <span className="text-xs text-gray-500">
-                            {new Date(application.createdAt).toLocaleDateString()}
+                            {formatDate(application.createdAt)}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
-                            {application.status || 'Pending'}
+                            {tOr(`enums.appStatus.${application.status}`, application.status) || t('enums.appStatus.pending')}
                           </span>
                         </div>
                       </div>
@@ -207,12 +209,12 @@ function OverviewTab() {
         <div className="bg-white rounded-lg shadow-md">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Messages</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('seeker.overview.recentMessages')}</h2>
               <Link
                 to="/messages"
                 className="text-sm text-primary hover:text-primary-dark font-medium"
               >
-                View All
+                {t('seeker.overview.viewAll')}
               </Link>
             </div>
           </div>
@@ -220,8 +222,8 @@ function OverviewTab() {
             {recentMessages.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <i className="fas fa-envelope text-3xl mb-4 text-gray-300"></i>
-                <p>No messages yet</p>
-                <p className="text-sm mt-2">Messages from employers will appear here</p>
+                <p>{t('seeker.overview.noMessages')}</p>
+                <p className="text-sm mt-2">{t('seeker.overview.noMessagesSub')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -231,22 +233,22 @@ function OverviewTab() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-medium text-gray-900 text-sm">
-                            {message.subject || 'New Message'}
+                            {message.subject || t('seeker.overview.newMessageFallback')}
                           </h3>
                           {!message.isRead && (
                             <span className="bg-error text-white text-xs px-2 py-1 rounded-full">
-                              New
+                              {t('seeker.overview.newBadge')}
                             </span>
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-2">
-                          From: {message.from?.name || 'Unknown'}
+                          {t('seeker.overview.from', { name: message.from?.name || t('seeker.overview.unknown') })}
                         </p>
                         <p className="text-sm text-gray-700 line-clamp-2">
                           {message.content?.substring(0, 80)}...
                         </p>
                         <div className="text-xs text-gray-500 mt-2">
-                          {new Date(message.createdAt).toLocaleDateString()}
+                          {formatDate(message.createdAt)}
                         </div>
                       </div>
                     </div>
@@ -260,7 +262,7 @@ function OverviewTab() {
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('seeker.overview.quickActions')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Link
             to="/jobs"
@@ -270,8 +272,8 @@ function OverviewTab() {
               <i className="fas fa-search text-primary"></i>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Find Jobs</h3>
-              <p className="text-sm text-gray-500">Browse available positions</p>
+              <h3 className="font-medium text-gray-900">{t('seeker.overview.findJobs')}</h3>
+              <p className="text-sm text-gray-500">{t('seeker.overview.findJobsSub')}</p>
             </div>
           </Link>
 
@@ -283,8 +285,8 @@ function OverviewTab() {
               <i className="fas fa-user text-success"></i>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Update Profile</h3>
-              <p className="text-sm text-gray-500">Keep your profile current</p>
+              <h3 className="font-medium text-gray-900">{t('seeker.overview.updateProfile')}</h3>
+              <p className="text-sm text-gray-500">{t('seeker.overview.updateProfileSub')}</p>
             </div>
           </Link>
 
@@ -296,8 +298,8 @@ function OverviewTab() {
               <i className="fas fa-bookmark text-warning"></i>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Saved Jobs</h3>
-              <p className="text-sm text-gray-500">Review your saved positions</p>
+              <h3 className="font-medium text-gray-900">{t('seeker.overview.savedJobs')}</h3>
+              <p className="text-sm text-gray-500">{t('seeker.overview.savedJobsSub')}</p>
             </div>
           </Link>
 
@@ -309,8 +311,8 @@ function OverviewTab() {
               <i className="fas fa-building text-success"></i>
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Companies</h3>
-              <p className="text-sm text-gray-500">Explore companies</p>
+              <h3 className="font-medium text-gray-900">{t('seeker.overview.companies')}</h3>
+              <p className="text-sm text-gray-500">{t('seeker.overview.companiesSub')}</p>
             </div>
           </Link>
         </div>

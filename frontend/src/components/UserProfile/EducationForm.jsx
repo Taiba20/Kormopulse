@@ -5,12 +5,14 @@ import { externalApiServices } from "../../services/externalApiServices";
 import { userService } from "../../services/userService";
 import { useSelector } from "react-redux";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
+import { useI18n } from "../../i18n/I18nContext";
 
 function EducationForm({
   setShowAddEducation,
   educationFormData,
   setEducationFormData,
 }) {
+  const { t } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const updateUser = useUpdateUserData();
 
@@ -160,13 +162,13 @@ function EducationForm({
         <div>
           <div className={showDropdown ? "" : "hidden"}>
             <InputField
-              label="Education"
+              label={t("profile.edu.education")}
               id="name"
               name="institution"
               value={formData.institution}
               onChange={handleSearch}
               isRequired={true}
-              placeholder="College/University"
+              placeholder={t("profile.edu.institutionPlaceholder")}
             />
             <ul className="list-none p-0 m-0 scrollable-list">
               {searchTerm && data.length > 0
@@ -193,15 +195,14 @@ function EducationForm({
                       className="flex items-center my-2 p-2 bg-white rounded-md shadow-sm border border-black hover:cursor-pointer"
                       onClick={() => handleDropdown({ name: searchTerm })}
                     >
-                      No results found for "{searchTerm}". Create "{searchTerm}
-                      ".
+                      {t("profile.edu.noResults", { term: searchTerm })}
                     </li>
                   )}
             </ul>
           </div>
           <div className={!showDropdown ? "" : "hidden"}>
             <label className="font-medium flex gap-2">
-              Education
+              {t("profile.edu.education")}
               <span className="text-gray-500">*</span>
             </label>
             <div className="my-2 px-2.5 py-2.5 bg-white border rounded-md flex justify-between items-center">
@@ -215,7 +216,7 @@ function EducationForm({
         </div>
         <div>
           <InputField
-            label="Start Date (Month/Year)"
+            label={t("profile.work.start")}
             id="start"
             name="start"
             type="month"
@@ -226,7 +227,7 @@ function EducationForm({
         </div>
         <div>
           <InputField
-            label="End Date (Month/Year)"
+            label={t("profile.work.end")}
             id="end"
             name="end"
             type="month"
@@ -237,20 +238,20 @@ function EducationForm({
         </div>
         <div>
           <InputField
-            label="Degree"
+            label={t("profile.edu.degree")}
             id="degree"
             value={formData.degree}
             onChange={handleInputChange}
             isRequired={false}
-            placeholder="Enter degree"
+            placeholder={t("profile.edu.degreePlaceholder")}
           />
           <InputField
-            label="Major"
+            label={t("profile.edu.major")}
             id="major"
             value={formData.major}
             onChange={handleInputChange}
             isRequired={false}
-            placeholder="Enter major"
+            placeholder={t("profile.edu.majorPlaceholder")}
           />
         </div>
 
@@ -259,13 +260,13 @@ function EducationForm({
             type="button"
             onClick={handleCancel}
             color="white"
-            label="Cancel"
+            label={t("profile.cancel")}
           />
           <SubmissionButton
             type="submit"
             onClick={handleFormSubmit}
             color="black"
-            label={saving ? "Saving.." : "Save"}
+            label={saving ? t("profile.saving") : t("profile.save")}
           />
         </div>
       </form>

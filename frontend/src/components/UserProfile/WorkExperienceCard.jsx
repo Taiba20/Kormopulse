@@ -1,25 +1,18 @@
 import React, { useState } from "react";
+import { useI18n } from "../../i18n/I18nContext";
 
 function WorkExperienceCard({
   exp,
   setShowAddWorkExperience,
   setWorkExperienceFormData,
 }) {
+  const { t, formatDate } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
   const { jobTitle, company, startMonth, description, endMonth } = exp;
 
-  let formattedStartMonth = startMonth
-    ? new Intl.DateTimeFormat("en-US", {
-        year: "numeric",
-        month: "long",
-      }).format(new Date(startMonth))
-    : "N/A";
-  let formattedEndMonth = endMonth
-    ? new Intl.DateTimeFormat("en-US", {
-        year: "numeric",
-        month: "long",
-      }).format(new Date(endMonth))
-    : "Present";
+  const monthFormat = { year: "numeric", month: "long" };
+  const formattedStartMonth = startMonth ? formatDate(startMonth, monthFormat) : t("profile.work.notAvailable");
+  const formattedEndMonth = endMonth ? formatDate(endMonth, monthFormat) : t("profile.work.present");
 
   const openEditForm = () => {
     setShowAddWorkExperience(true);
@@ -37,7 +30,7 @@ function WorkExperienceCard({
             <p className="text-primary font-medium">{jobTitle}</p>
             {startMonth && (
               <p className="text-text-secondary text-xs">
-                {formattedStartMonth} to {formattedEndMonth}
+                {t("profile.work.to", { start: formattedStartMonth, end: formattedEndMonth })}
               </p>
             )}
           </div>
@@ -47,7 +40,7 @@ function WorkExperienceCard({
             className="text-sm text-primary hover:text-primary-dark hover:cursor-pointer font-medium transition-colors duration-200"
             onClick={openEditForm}
           >
-            Edit
+            {t("profile.edit")}
           </span>
         </div>
       </div>
@@ -68,7 +61,7 @@ function WorkExperienceCard({
             onClick={() => setIsExpanded(!isExpanded)}
             className="font-medium text-primary hover:text-primary-dark cursor-pointer transition-colors duration-200"
           >
-            {isExpanded ? "Read less" : "Read more"}
+            {isExpanded ? t("profile.work.readLess") : t("profile.work.readMore")}
           </span>
         )}
       </div>

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import SubmissionButton from "../Common/Buttons/SubmissionButton";
 import InputField from "../Common/FormComponents/InputField";
 import { userService } from "../../services/userService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function SocialProfileForm({ userData }) {
+  const { t } = useI18n();
   const initialFormData = {
     website: userData?.userProfile?.socialProfiles?.portfolioWebsite || "",
     linkedin: userData?.userProfile?.socialProfiles?.linkedin || "",
@@ -66,7 +68,7 @@ function SocialProfileForm({ userData }) {
     <div>
       <form onSubmit={handleSubmit}>
         <InputField
-          label="Website / Portfolio"
+          label={t("profile.socialForm.website")}
           id="website"
           value={formData.website}
           onChange={handleInputChange}
@@ -75,7 +77,7 @@ function SocialProfileForm({ userData }) {
           placeholder={"https://"}
         />
         <InputField
-          label="Linkedin"
+          label={t("profile.socialForm.linkedin")}
           id="linkedin"
           value={formData.linkedin}
           onChange={handleInputChange}
@@ -84,7 +86,7 @@ function SocialProfileForm({ userData }) {
           placeholder={"https://www.linkedin.com/in/username"}
         />
         <InputField
-          label="Twitter"
+          label={t("profile.socialForm.twitter")}
           id="twitter"
           value={formData.twitter}
           onChange={handleInputChange}
@@ -93,7 +95,7 @@ function SocialProfileForm({ userData }) {
           placeholder={"https://twitter.com/username"}
         />
         <InputField
-          label="GitHub"
+          label={t("profile.socialForm.github")}
           id="github"
           value={formData.github}
           onChange={handleInputChange}
@@ -107,13 +109,13 @@ function SocialProfileForm({ userData }) {
               type="button"
               onClick={handleCancel}
               color="white"
-              label="Cancel"
+              label={t("profile.cancel")}
             />
             <SubmissionButton
               type="submit"
               onClick={handleSubmit}
               color="black"
-              label={updating ? "Saving..." : "Save"}
+              label={updating ? t("profile.saving") : t("profile.save")}
             />
           </div>
         )}

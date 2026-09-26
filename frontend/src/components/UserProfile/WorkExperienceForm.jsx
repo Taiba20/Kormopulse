@@ -7,12 +7,14 @@ import Checkbox from "../Common/FormComponents/Checkbox";
 import { userService } from "../../services/userService.js";
 import { useSelector } from "react-redux";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
+import { useI18n } from "../../i18n/I18nContext";
 
 function WorkExperienceForm({
   setShowAddWorkExperience,
   data,
   setWorkExperienceFormData,
 }) {
+  const { t } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const updateUser = useUpdateUserData();
 
@@ -161,7 +163,7 @@ function WorkExperienceForm({
           </div>
           <div className={!showDropdown ? "" : "hidden"}>
             <label className="font-medium flex gap-2">
-              Company
+              {t("profile.work.company")}
               <span className="text-gray-500">*</span>
             </label>
             <div className="flex justify-between items-center my-1 p-2 bg-white rounded-md shadow-sm border">
@@ -182,18 +184,18 @@ function WorkExperienceForm({
         </div>
         <div>
           <InputField
-            label="Title"
+            label={t("profile.work.title")}
             id="title"
             name="title"
             onChange={handleInputChange}
             value={formData.title}
             isRequired={true}
-            placeholder="SDE 1"
+            placeholder={t("profile.work.titlePlaceholder")}
           />
         </div>
         <div>
           <InputField
-            label="Start Date (Month/Year)"
+            label={t("profile.work.start")}
             type="month"
             id="startDate"
             name="startDate"
@@ -205,7 +207,7 @@ function WorkExperienceForm({
 
         <div>
           <InputField
-            label="End Date (Month/Year)"
+            label={t("profile.work.end")}
             type="month"
             id="endDate"
             name="endDate"
@@ -215,15 +217,15 @@ function WorkExperienceForm({
           />
         </div>
         <div className="ml-2">
-          <Checkbox label="I currently work here" id="current" name="current" />
+          <Checkbox label={t("profile.work.current")} id="current" name="current" />
         </div>
         <div>
           <TextArea
-            label="Description"
+            label={t("profile.work.description")}
             id="description"
             value={formData.description}
             onChange={handleInputChange}
-            placeholder="Description"
+            placeholder={t("profile.work.description")}
           />
         </div>
         <div className="flex gap-6 my-4 justify-end">
@@ -231,13 +233,13 @@ function WorkExperienceForm({
             type="button"
             onClick={handleCancel}
             color="white"
-            label="Cancel"
+            label={t("profile.cancel")}
           />
           <SubmissionButton
             type="submit"
             onClick={handleFormSubmit}
             color="black"
-            label={saving ? "Saving..." : "Save"}
+            label={saving ? t("profile.saving") : t("profile.save")}
           />
         </div>
       </form>

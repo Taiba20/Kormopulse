@@ -4,8 +4,10 @@ import SubmissionButton from "../Common/Buttons/SubmissionButton";
 import { userService } from "../../services/userService";
 import { useSelector } from "react-redux";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
+import { useI18n } from "../../i18n/I18nContext";
 
 function UpdateResume() {
+  const { t, tError, formatDate } = useI18n();
   const [resumeLink, setResumeLink] = useState("");
   const [resume, setResume] = useState("");
   const [updating, setUpdating] = useState(null);
@@ -23,19 +25,19 @@ function UpdateResume() {
 
   const validateResumeLink = (link) => {
     if (!link.trim()) {
-      return "Resume link is required";
+      return t("profile.resumeLink.required");
     }
     
     // Basic URL validation
     try {
       new URL(link);
     } catch {
-      return "Please enter a valid URL";
+      return t("profile.resumeLink.invalidUrl");
     }
     
     // Check if it's a Google Drive link
     if (!link.includes('drive.google.com') && !link.includes('docs.google.com')) {
-      return "Please use a Google Drive link for better accessibility";
+      return t("profile.resumeLink.useDrive");
     }
     
     return null;
@@ -72,11 +74,11 @@ function UpdateResume() {
       await userService.updateResume(resumeLink);
       updateUserData();
       setResumeLink("");
-      setSuccessMessage('Resume updated successfully!');
+      setSuccessMessage(t('profile.resumeLink.updated'));
     } catch (error) {
       console.error('Error updating resume:', error);
       setErrors({ 
-        submit: error.response?.data?.message || "Failed to update resume" 
+        submit: tError(error, "profile.resumeLink.failed") 
       });
     } finally {
       setUpdating(false);
@@ -87,7 +89,7 @@ function UpdateResume() {
     <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 py-10 sm:px-5 md:px-10 lg:px-20">
       <div className="w-full max-w-2xl p-6 bg-white rounded shadow-md">
         <h2 className="mb-5 text-lg sm:text-xl md:text-2xl font-bold text-gray-700">
-          Upload your recent resume or CV
+          {t("profile.resumeLink.heading")}
         </h2>
 
         {successMessage && (
@@ -104,21 +106,21 @@ function UpdateResume() {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <InputField
-            label="Resume link"
+            label={t("profile.resumeLink.label")}
             id="resumeLink"
             name="resumeLink"
             value={resumeLink}
             onChange={handleInputChange}
             isRequired={true}
-            placeholder="Paste your Google Drive link here"
-            description="Please ensure that your Google Drive link is accessible to everyone."
+            placeholder={t("profile.resumeLink.placeholder")}
+            description={t("profile.resumeLink.description")}
             error={errors.resumeLink}
           />
 
           <div className="flex justify-end my-2">
             <SubmissionButton
               type="submit"
-              label={updating ? "Updating..." : "Update"}
+              label={updating ? t("profile.resumeLink.updating") : t("profile.resumeLink.update")}
               color="black"
             />
           </div>
@@ -127,7 +129,7 @@ function UpdateResume() {
         {resume && (
           <div className="mt-10 p-3 bg-gray-200 rounded shadow-md">
             <h3 className="text-lg font-bold text-gray-700">
-              Current Resume Link:
+              {t("profile.resumeLink.current")}
             </h3>
             <a
               href={resume}
@@ -139,10 +141,9 @@ function UpdateResume() {
               {resume}
             </a>
             <p className="text-sm text-gray-600 mt-2">
-              Last updated: {userData?.userProfile?.updatedAt ? 
-                new Date(userData.userProfile.updatedAt).toLocaleDateString() : 
-                'Unknown'
-              }
+              {t("profile.resumeLink.lastUpdated", {
+                date: userData?.userProfile?.updatedAt ? formatDate(userData.userProfile.updatedAt) : t("profile.resumeLink.unknown"),
+              })}
             </p>
           </div>
         )}

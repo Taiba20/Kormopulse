@@ -10,12 +10,14 @@ import SkillsSearch from "../Common/SkillsSearch";
 import { userService } from "../../services/userService";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import ResumeImportModal from "./ResumeImportModal";
+import { useI18n } from "../../i18n/I18nContext";
 
 function EditProfile() {
+  const { t } = useI18n();
   const [showAddWorkExperience, setShowAddWorkExperience] = useState(false);
   const [showAddEducation, setShowAddEducation] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState(new Map());
-  const [skillsMessage, setSkillsMessage] = useState('');
+  const [skillsMessage, setSkillsMessage] = useState(null); // { type: 'success' | 'error', key }
   const [showResumeImport, setShowResumeImport] = useState(false);
 
   const { userData } = useSelector((store) => store.auth);
@@ -56,14 +58,14 @@ function EditProfile() {
               skills: currentSkills 
             });
             updateUserData();
-            setSkillsMessage('Skills updated successfully!');
-            setTimeout(() => setSkillsMessage(''), 3000);
+            setSkillsMessage({ type: 'success', key: 'profile.skillsUpdated' });
+            setTimeout(() => setSkillsMessage(null), 3000);
           }
         }
       } catch (error) {
         console.error('Error updating skills:', error);
-        setSkillsMessage('Error updating skills. Please try again.');
-        setTimeout(() => setSkillsMessage(''), 3000);
+        setSkillsMessage({ type: 'error', key: 'profile.skillsError' });
+        setTimeout(() => setSkillsMessage(null), 3000);
       }
     };
 
@@ -75,7 +77,7 @@ function EditProfile() {
   if (!userData) {
     return (
       <div className="h-screen flex justify-center items-center text-xl font-semibold text-primary">
-        Loading...
+        {t("profile.loading")}
       </div>
     );
   }
@@ -87,14 +89,14 @@ function EditProfile() {
           className="flex items-center gap-2 text-sm bg-primary/10 text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary/20"
         >
           <i className="fa-solid fa-wand-magic-sparkles"></i>
-          Import from resume
+          {t("profile.importFromResume")}
         </button>
       </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
-          <p className="font-semibold text-primary">About</p>
+          <p className="font-semibold text-primary">{t("profile.about")}</p>
           <p className="text-text-secondary text-sm">
-            Tell us about yourself so companies know who you are.
+            {t("profile.aboutSub")}
           </p>
         </div>
         <div className="w-full md:w-[70%] ">
@@ -103,9 +105,9 @@ function EditProfile() {
       </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
-          <p className="font-semibold text-primary">Social Profiles</p>
+          <p className="font-semibold text-primary">{t("profile.social")}</p>
           <p className="text-text-secondary text-sm">
-            Where can people find you online?
+            {t("profile.socialSub")}
           </p>
         </div>
         <div className="w-full md:w-[70%] ">
@@ -114,9 +116,9 @@ function EditProfile() {
       </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
-          <p className="font-semibold text-primary">Your work experience</p>
+          <p className="font-semibold text-primary">{t("profile.workTitle")}</p>
           <p className="text-text-secondary text-sm">
-            What other positions have you held?
+            {t("profile.workSub")}
           </p>
         </div>
         <div className="w-full md:w-[70%] flex flex-col gap-3.5">
@@ -143,16 +145,16 @@ function EditProfile() {
               onClick={() => setShowAddWorkExperience(true)}
             >
               <i className="fa-solid fa-plus"></i>
-              <span>Add work experience</span>
+              <span>{t("profile.addWork")}</span>
             </div>
           )}
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
-          <p className="font-semibold text-primary">Education</p>
+          <p className="font-semibold text-primary">{t("profile.educationTitle")}</p>
           <p className="text-text-secondary text-sm">
-            What schools have you studied at?
+            {t("profile.educationSub")}
           </p>
         </div>
         <div className="w-full md:w-[70%] flex flex-col gap-3.5">
@@ -180,26 +182,26 @@ function EditProfile() {
               onClick={() => setShowAddEducation(true)}
             >
               <i className="fa-solid fa-plus"></i>
-              <span>Add education</span>
+              <span>{t("profile.addEducation")}</span>
             </div>
           )}
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-16 my-6 border-b border-neutral-200 pb-10">
         <div className="w-full md:w-[30%] flex flex-col gap-2.5">
-          <p className="font-semibold text-primary">Your Skills</p>
+          <p className="font-semibold text-primary">{t("profile.skillsTitle")}</p>
           <p className="text-text-secondary text-sm">
-            This will help startups hone in on your strengths.
+            {t("profile.skillsSub")}
           </p>
         </div>
         <div className="w-full md:w-[70%] flex flex-col gap-3.5">
           {skillsMessage && (
             <div className={`p-2 rounded text-sm ${
-              skillsMessage.includes('Error') 
+              skillsMessage.type === 'error' 
                 ? 'bg-red-100 text-red-700' 
                 : 'bg-green-100 text-green-700'
             }`}>
-              {skillsMessage}
+              {t(skillsMessage.key)}
             </div>
           )}
           <SkillsSearch

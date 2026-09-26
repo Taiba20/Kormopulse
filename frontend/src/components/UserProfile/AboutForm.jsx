@@ -4,8 +4,20 @@ import InputField from "../Common/FormComponents/InputField.jsx";
 import SelectInput from "../Common/FormComponents/SelectInput.jsx";
 import SubmissionButton from "../Common/Buttons/SubmissionButton.jsx";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
+import { useI18n } from "../../i18n/I18nContext";
+
+const COUNTRY_KEYS = {
+  bangladesh: 1, united_states: 1, united_kingdom: 1, australia: 1, canada: 1, germany: 1,
+  france: 1, japan: 1, china: 1, brazil: 1, south_africa: 1,
+};
+const ROLE_GROUPS = [
+  { key: "technical", roles: ["software_engineer", "data_scientist", "system_admin"] },
+  { key: "management", roles: ["project_manager", "product_manager", "team_lead"] },
+  { key: "design", roles: ["ui_designer", "ux_designer", "graphic_designer"] },
+];
 
 function AboutForm({ userData }) {
+  const { t, tError } = useI18n();
   const initialFormData = useMemo(() => ({
     name: userData?.userProfile?.name || '',
     location: userData?.userProfile?.location || '',
@@ -48,19 +60,19 @@ function AboutForm({ userData }) {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = t("profile.about_form.nameRequired");
     }
     
     if (!formData.location || formData.location === "default") {
-      newErrors.location = "Please select a location";
+      newErrors.location = t("profile.about_form.locationRequired");
     }
     
     if (!formData.primaryRole) {
-      newErrors.primaryRole = "Please select a primary role";
+      newErrors.primaryRole = t("profile.about_form.roleRequired");
     }
     
     if (!formData.yearsOfExperience) {
-      newErrors.yearsOfExperience = "Please select years of experience";
+      newErrors.yearsOfExperience = t("profile.about_form.experienceRequired");
     }
     
     setErrors(newErrors);
@@ -92,13 +104,13 @@ function AboutForm({ userData }) {
     
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, profilePicture: "File size must be less than 5MB" }));
+      setErrors(prev => ({ ...prev, profilePicture: t("profile.about_form.fileTooBig") }));
       return;
     }
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, profilePicture: "Please select a valid image file" }));
+      setErrors(prev => ({ ...prev, profilePicture: t("profile.about_form.fileNotImage") }));
       return;
     }
     
@@ -115,13 +127,13 @@ function AboutForm({ userData }) {
       const res = await userService.updateProfilePicture(file);
       if (res.status === 200) {
         updateUserData();
-        setSuccessMessage('Profile picture updated successfully!');
+        setSuccessMessage(t('profile.about_form.pictureUpdated'));
       }
     } catch (error) {
       console.error(`Error updating profile picture:`, error);
       setErrors(prev => ({ 
         ...prev, 
-        profilePicture: error.response?.data?.message || "Failed to upload image" 
+        profilePicture: tError(error, "profile.about_form.pictureFailed") 
       }));
     } finally {
       setUploadProgress(false);
@@ -143,12 +155,12 @@ function AboutForm({ userData }) {
       if (res.status === 200) {
         setIsChanged(false);
         updateUserData();
-        setSuccessMessage('Profile updated successfully!');
+        setSuccessMessage(t('profile.about_form.updated'));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
       setErrors({ 
-        submit: error.response?.data?.message || "Failed to update profile" 
+        submit: tError(error, "profile.about_form.updateFailed") 
       });
     } finally {
       setUpdating(false);
@@ -160,56 +172,19 @@ function AboutForm({ userData }) {
   };
 
   const locationOptions = [
-    { value: "default", label: "Select Country" },
-    { value: "bangladesh", label: "Bangladesh" },
-    { value: "united_states", label: "United States" },
-    { value: "united_kingdom", label: "United Kingdom" },
-    { value: "australia", label: "Australia" },
-    { value: "canada", label: "Canada" },
-    { value: "germany", label: "Germany" },
-    { value: "france", label: "France" },
-    { value: "japan", label: "Japan" },
-    { value: "china", label: "China" },
-    { value: "brazil", label: "Brazil" },
-    { value: "south_africa", label: "South Africa" },
+    { value: "default", label: t("profile.about_form.selectCountry") },
+    ...Object.keys(COUNTRY_KEYS).map((key) => ({ value: key, label: t(`profile.countries.${key}`) })),
   ];
 
-  const roleOptions = [
-    {
-      label: "Technical Roles",
-      options: [
-        { value: "software_engineer", label: "Software Engineer" },
-        { value: "data_scientist", label: "Data Scientist" },
-        { value: "system_admin", label: "System Administrator" },
-      ],
-    },
-    {
-      label: "Management Roles",
-      options: [
-        { value: "project_manager", label: "Project Manager" },
-        { value: "product_manager", label: "Product Manager" },
-        { value: "team_lead", label: "Team Lead" },
-      ],
-    },
-    {
-      label: "Design Roles",
-      options: [
-        { value: "ui_designer", label: "UI Designer" },
-        { value: "ux_designer", label: "UX Designer" },
-        { value: "graphic_designer", label: "Graphic Designer" },
-      ],
-    },
-  ];
+  const roleOptions = ROLE_GROUPS.map((group) => ({
+    label: t(`profile.roleGroups.${group.key}`),
+    options: group.roles.map((role) => ({ value: role, label: t(`profile.roles.${role}`) })),
+  }));
 
-  const experienceOptions = [
-    { value: "0", label: "Less than 1 year" },
-    { value: "1", label: "1 year" },
-    { value: "2", label: "2 years" },
-    { value: "3", label: "3 years" },
-    { value: "4", label: "4 years" },
-    { value: "5", label: "5 years" },
-    { value: "6", label: "More than 5 years" },
-  ];
+  const experienceOptions = [0, 1, 2, 3, 4, 5, 6].map((n) => ({
+    value: String(n),
+    label: t(`profile.experienceOptions.${n}`),
+  }));
 
   return (
     <div>
@@ -227,7 +202,7 @@ function AboutForm({ userData }) {
       
       <form onSubmit={handleSubmit}>
         <InputField
-          label="Your Name"
+          label={t("profile.about_form.name")}
           id="name"
           name="name"
           value={formData.name}
@@ -241,7 +216,7 @@ function AboutForm({ userData }) {
             {formData.profilePicture ? (
               <img 
                 src={formData.profilePicture} 
-                alt="User" 
+                alt={t("profile.about_form.userAlt")} 
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -264,9 +239,9 @@ function AboutForm({ userData }) {
               className="border border-black py-2 px-3 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors"
               onClick={() => document.getElementById("profilePicture").click()}
             >
-              {uploadProgress ? "Uploading..." : "Upload a new photo"}
+              {uploadProgress ? t("profile.about_form.uploading") : t("profile.about_form.upload")}
             </button>
-            <p className="text-xs text-gray-500 mt-1">JPG, PNG or GIF. Max size 5MB.</p>
+            <p className="text-xs text-gray-500 mt-1">{t("profile.about_form.uploadHint")}</p>
             {errors.profilePicture && (
               <p className="text-red-500 text-xs mt-1">{errors.profilePicture}</p>
             )}
@@ -274,7 +249,7 @@ function AboutForm({ userData }) {
         </div>
         
         <SelectInput
-          label="Where are you based?"
+          label={t("profile.about_form.whereBased")}
           id="location"
           name="location"
           value={formData.location}
@@ -287,13 +262,13 @@ function AboutForm({ userData }) {
         <div className="flex flex-col md:flex-row">
           <div className="w-full md:w-3/5 pr-2">
             <SelectInput
-              label="Select your primary role"
+              label={t("profile.about_form.role")}
               id="primaryRole"
               name="primaryRole"
               value={formData.primaryRole}
               onChange={handleInputChange}
               options={roleOptions}
-              placeholder="Select your primary role"
+              placeholder={t("profile.about_form.role")}
               isRequired={true}
               optgroup={true}
               error={errors.primaryRole}
@@ -301,13 +276,13 @@ function AboutForm({ userData }) {
           </div>
           <div className="w-full md:w-2/5 pr-2">
             <SelectInput
-              label="Years of experience"
+              label={t("profile.about_form.experience")}
               id="yearsOfExperience"
               name="yearsOfExperience"
               value={formData.yearsOfExperience}
               onChange={handleInputChange}
               options={experienceOptions}
-              placeholder="Select years of experience"
+              placeholder={t("profile.about_form.selectExperience")}
               isRequired={true}
               error={errors.yearsOfExperience}
             />
@@ -316,14 +291,14 @@ function AboutForm({ userData }) {
         
         <div>
           <label htmlFor="bio" className="block font-medium">
-            Your bio
+            {t("profile.about_form.bio")}
           </label>
           <textarea
             id="bio"
             name="bio"
             value={formData.bio}
             onChange={handleInputChange}
-            placeholder="Stanford CS, Full stack generalist; launched a successful Android app, worked at Google"
+            placeholder={t("profile.about_form.bioPlaceholder")}
             rows="5"
             cols="50"
             className="w-full p-2 rounded-lg border border-gray-400 my-2"
@@ -336,12 +311,12 @@ function AboutForm({ userData }) {
               type="button"
               onClick={handleCancel}
               color="white"
-              label="Cancel"
+              label={t("profile.cancel")}
             />
             <SubmissionButton
               type="submit"
               color="black"
-              label={updating ? "Saving..." : "Save"}
+              label={updating ? t("profile.saving") : t("profile.save")}
             />
           </div>
         )}

@@ -1,15 +1,12 @@
 import React, { useState } from "react";
+import { useI18n } from "../../i18n/I18nContext";
 
 function EducationCard({ setShowAddEducation, setEducationFormData, edu }) {
+  const { t, formatDate } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getFormattedDate = (dateString) => {
-    const date = new Date(dateString);
-    return (
-      date.toLocaleString("default", { month: "short" }) +
-      " " +
-      date.getFullYear()
-    );
+    return formatDate(new Date(dateString), { year: "numeric", month: "short" });
   };
 
   const { institution, degree, fieldOfStudy, startYear, endYear } = edu;
@@ -34,7 +31,7 @@ function EducationCard({ setShowAddEducation, setEducationFormData, edu }) {
               {fieldOfStudy}, {degree}
             </p>
             <p className="text-gray-500 text-sm">
-              {formattedStartYear} to {formattedEndYear}
+              {t("profile.work.to", { start: formattedStartYear, end: formattedEndYear })}
             </p>
             {/* <p className="text-gray-500 text-sm">9.5 CGPA</p> */}
           </div>
@@ -44,7 +41,7 @@ function EducationCard({ setShowAddEducation, setEducationFormData, edu }) {
             className="text-sm text-gray-500 hover:cursor-pointer"
             onClick={openEditForm}
           >
-            Edit
+            {t("profile.edit")}
           </span>
         </div>
       </div>

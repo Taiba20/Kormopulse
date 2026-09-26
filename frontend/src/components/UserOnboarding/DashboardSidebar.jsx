@@ -14,46 +14,48 @@ import { userService } from "../../services/userService";
 import { logout } from "../../store/authSlice";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import { useEffect } from "react";
+import { useI18n } from "../../i18n/I18nContext";
 
 const sidebarLinks = [
   {
-    name: "Dashboard",
+    name: "dashboard",
     href: "/dashboard/home",
     icon: HomeIcon,
   },
   {
-    name: "Applications",
+    name: "applications",
     href: "/dashboard/applications",
     icon: UserPlusIcon,
   },
   {
-    name: "Shortlisted",
+    name: "shortlisted",
     href: "/dashboard/shortlisted",
     icon: ShieldCheckIcon,
   },
   {
-    name: "Messages",
+    name: "messages",
     href: "/dashboard/messages",
     icon: ChatBubbleBottomCenterIcon,
   },
   {
-    name: "Interviews",
+    name: "interviews",
     href: "/dashboard/interviews",
     icon: CalendarDaysIcon,
   },
   {
-    name: "Analytics",
+    name: "analytics",
     href: "/dashboard/analytics",
     icon: ChartBarIcon,
   },
   {
-    name: "Profile",
+    name: "profile",
     href: "/dashboard/profile",
     icon: UserCircleIcon,
   },
 ];
 
 function DashboardSidebar() {
+  const { t } = useI18n();
   const updateUser = useUpdateUserData();
   const { userData } = useSelector((store) => store.auth);
 
@@ -104,7 +106,7 @@ function DashboardSidebar() {
                             : "text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]"
                         }`}
                       >
-                        {item.name}
+                        {t(`employer.sidebar.${item.name}`)}
                       </span>
                     </span>
                   );
@@ -119,7 +121,7 @@ function DashboardSidebar() {
           {userData?.userProfile?.companyLogo ? (
             <img
               src={userData.userProfile.companyLogo}
-              alt={`${userData?.userProfile?.companyName} Logo`}
+              alt={userData?.userProfile?.companyName || ""}
               className="w-full h-full object-cover rounded-full"
             />
           ) : (
@@ -138,12 +140,12 @@ function DashboardSidebar() {
                 className="text-xs font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-error)]"
                 onClick={handleLogout}
               >
-                Logout
+                {t("employer.sidebar.logout")}
               </span>
             </div>
           </div>
           <span className="mt-1 block text-sm font-medium text-[var(--color-text-secondary)]">
-            Logged in as {userData?.username}
+            {t("employer.sidebar.loggedInAs", { username: userData?.username || "" })}
           </span>
         </div>
       </div>

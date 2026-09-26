@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import InputField from "./FormComponents/InputField";
 import { externalApiServices } from "../../services/externalApiServices";
 import { userService } from "../../services/userService";
+import { useI18n } from "../../i18n/I18nContext";
 
 function SkillsSearch({ selectedSkills, setSelectedSkills, profile }) {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const [skillsApiData, setSkillsApiData] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -90,12 +92,12 @@ function SkillsSearch({ selectedSkills, setSelectedSkills, profile }) {
       <div>
         <InputField
           id={"skills"}
-          placeholder={"e.g. Python, React, Data Analysis"}
+          placeholder={t("profile.skills.placeholder")}
           onChange={handleSearch}
           value={searchTerm}
         />
         {isLoading ? (
-          <div className="px-2 font-medium ">Loading...</div>
+          <div className="px-2 font-medium ">{t("profile.skills.loading")}</div>
         ) : (
           <ul className={`${searchTerm ? "border" : ""} my-1`}>
             {searchTerm && skillsApiData.length > 0
@@ -113,14 +115,14 @@ function SkillsSearch({ selectedSkills, setSelectedSkills, profile }) {
                     className="text-[var(--color-text-primary)] border-b py-1.5 px-4 hover:cursor-pointer hover:bg-[var(--color-neutral-100)] font-medium"
                     onClick={() => handleSkillSelect(searchTerm)}
                   >
-                    Add "{searchTerm}" as a new skill
+                    {t("profile.skills.addNew", { term: searchTerm })}
                   </li>
                 )}
           </ul>
         )}
         {!searchTerm && (
           <div className="text-sm text-gray-500 mt-2 px-2">
-            Start typing to search for skills or add custom skills
+            {t("profile.skills.hint")}
           </div>
         )}
       </div>

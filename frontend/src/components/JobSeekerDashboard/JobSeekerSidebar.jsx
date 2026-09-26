@@ -3,8 +3,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { userService } from '../../services/userService';
 import { logout } from '../../store/authSlice';
+import { useI18n } from '../../i18n/I18nContext';
 
 function JobSeekerSidebar() {
+  const { t } = useI18n();
   const { userData } = useSelector((store) => store.auth);
   const location = useLocation();
   const dispatch = useDispatch();
@@ -12,55 +14,55 @@ function JobSeekerSidebar() {
 
   const navigation = [
     {
-      name: 'Dashboard',
+      name: t('seeker.sidebar.dashboard'), key: 'dashboard',
       href: '/my-dashboard',
       icon: 'fas fa-home',
       current: location.pathname === '/my-dashboard' || location.pathname === '/my-dashboard/'
     },
     {
-      name: 'Applications',
+      name: t('seeker.sidebar.applications'), key: 'applications',
       href: '/my-dashboard/applications',
       icon: 'fas fa-paper-plane',
       current: location.pathname === '/my-dashboard/applications'
     },
     {
-      name: 'Saved Jobs',
+      name: t('seeker.sidebar.savedJobs'), key: 'savedJobs',
       href: '/my-dashboard/saved-jobs',
       icon: 'fas fa-bookmark',
       current: location.pathname === '/my-dashboard/saved-jobs'
     },
     {
-      name: 'Browse Jobs',
+      name: t('seeker.sidebar.browseJobs'), key: 'browseJobs',
       href: '/jobs',
       icon: 'fas fa-search',
       current: location.pathname === '/jobs'
     },
     {
-      name: 'Messages',
+      name: t('seeker.sidebar.messages'), key: 'messages',
       href: '/messages',
       icon: 'fas fa-envelope',
       current: location.pathname === '/messages'
     },
     {
-      name: 'Interviews',
+      name: t('seeker.sidebar.interviews'), key: 'interviews',
       href: '/interviews',
       icon: 'fas fa-calendar-check',
       current: location.pathname === '/interviews'
     },
     {
-      name: 'Job Alerts',
+      name: t('seeker.sidebar.jobAlerts'), key: 'jobAlerts',
       href: '/alerts',
       icon: 'fas fa-bell',
       current: location.pathname === '/alerts'
     },
     {
-      name: 'Salary Insights',
+      name: t('seeker.sidebar.salaryInsights'), key: 'salaryInsights',
       href: '/salary-insights',
       icon: 'fas fa-chart-line',
       current: location.pathname === '/salary-insights'
     },
     {
-      name: 'Profile',
+      name: t('seeker.sidebar.profile'), key: 'profile',
       href: '/profile',
       icon: 'fas fa-user',
       current: location.pathname === '/profile'
@@ -85,7 +87,7 @@ function JobSeekerSidebar() {
         <div className="flex flex-col items-center gap-3 p-1 xl:items-stretch xl:px-3">
           {navigation.map((item) => {
             return (
-              <Link to={item.href} key={item.name} className="group">
+              <Link to={item.href} key={item.key} className="group">
                 <span
                   className={`flex items-center gap-3 rounded-md px-3 py-2 transition-all ${
                     item.current ? "bg-[var(--color-neutral-100)]" : "group-hover:bg-[var(--color-neutral-50)]"
@@ -119,7 +121,7 @@ function JobSeekerSidebar() {
           {userData?.userProfile?.profilePicture ? (
             <img
               src={userData.userProfile.profilePicture}
-              alt={`${userData.name} Profile`}
+              alt={userData.name}
               className="w-full h-full object-cover rounded-full"
             />
           ) : (
@@ -131,19 +133,19 @@ function JobSeekerSidebar() {
         <div className="ie-userDetails flex-1">
           <div className="flex justify-between gap-2">
             <span className="text-base font-semibold text-[var(--color-text-secondary)] truncate">
-              {userData?.name || 'Job Seeker'}
+              {userData?.name || t('seeker.sidebar.defaultName')}
             </span>
             <div className="group flex cursor-pointer items-center gap-1 rounded-full bg-[var(--color-neutral-100)] px-2 py-1 transition-all hover:bg-[var(--color-neutral-50)]">
               <span
                 className="text-xs font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-error)]"
                 onClick={handleLogout}
               >
-                Logout
+                {t('seeker.sidebar.logout')}
               </span>
             </div>
           </div>
           <span className="mt-1 block text-sm font-medium text-[var(--color-text-secondary)] truncate">
-            Logged in as {userData?.username}
+            {t('seeker.sidebar.loggedInAs', { username: userData?.username || '' })}
           </span>
         </div>
       </div>

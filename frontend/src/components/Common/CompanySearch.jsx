@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useI18n } from '../../i18n/I18nContext';
 
 const CompanySearch = ({ handleDropdown, width }) => {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [companies] = useState([
     { name: 'Google', logo: 'https://logo.clearbit.com/google.com', domain: 'google.com' },
@@ -26,7 +28,7 @@ const CompanySearch = ({ handleDropdown, width }) => {
     <div className={`relative ${width}`}>
       <input
         type="text"
-        placeholder="Search for company..."
+        placeholder={t("profile.work.searchCompany")}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full px-4 py-3 text-base border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-200 bg-background text-text-primary placeholder-text-secondary/60"

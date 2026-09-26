@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { userService } from "../services/userService";
+import { useI18n } from "../i18n/I18nContext";
 
 function UserPublicProfile() {
+  const { t, tError, formatDate: formatLocaleDate, formatNumber } = useI18n();
   const { id } = useParams();
   const [userDetails, setUserDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,50 +26,48 @@ function UserPublicProfile() {
       setUserDetails(res.data || res);
     } catch (error) {
       console.error("Error fetching public profile:", error);
-      setError(error.response?.data?.message || "Failed to load user profile");
+      setError(tError(error, "publicProfile.loadFailed"));
     } finally {
       setLoading(false);
     }
   };
 
-  function formatDate(dateString) {
-    const options = { year: "numeric", month: "short" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  }
+  const formatDate = (dateString) => formatLocaleDate(dateString, { year: "numeric", month: "short" });
 
-  function calculateDuration(start, end) {
+  const calculateDuration = (start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
-    const years = endDate.getFullYear() - startDate.getFullYear();
-    const months = endDate.getMonth() - startDate.getMonth();
-    return `${years} years ${months} months`;
-  }
+    return t("publicProfile.duration", {
+      years: formatNumber(endDate.getFullYear() - startDate.getFullYear()),
+      months: formatNumber(endDate.getMonth() - startDate.getMonth()),
+    });
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 mt-[3.5rem]">
       {loading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-text-secondary">Loading profile...</p>
+          <p className="mt-4 text-text-secondary">{t("publicProfile.loading")}</p>
         </div>
       ) : error ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-4">😞</div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">Profile Not Found</h3>
+          <h3 className="text-lg font-medium text-text-primary mb-2">{t("publicProfile.notFoundTitle")}</h3>
           <p className="text-text-secondary">{error}</p>
         </div>
       ) : !userDetails ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-4">👤</div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">No Profile Data</h3>
-          <p className="text-text-secondary">This user's profile is not available.</p>
+          <h3 className="text-lg font-medium text-text-primary mb-2">{t("publicProfile.noDataTitle")}</h3>
+          <p className="text-text-secondary">{t("publicProfile.noData")}</p>
         </div>
       ) : (
       <div className="p-8 bg-white rounded-xl shadow-lg w-10/12 mt-7 border border-neutral-200">
         <img
           className="w-24 h-24 mx-auto rounded-full border-4 border-primary shadow-md"
           src={userDetails?.userProfile?.profilePicture || "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg"}
-          alt="Profile"
+          alt=""
           onError={(e) => {
             e.target.src = "https://upload.wikimedia.org/wikipedia/commons/2/2c/Default_pfp.svg";
           }}
@@ -77,7 +77,7 @@ function UserPublicProfile() {
         </h2>
         <div className="text-xs font-medium text-text-secondary flex gap-1.5 items-center justify-center">
           <span>
-            {userDetails?.userProfile?.yearsOfExperience || 0} Years of exp
+            {t("publicProfile.yearsExp", { n: formatNumber(Number(userDetails?.userProfile?.yearsOfExperience) || 0) })}
           </span>
 
           <div className="h-1 w-1 bg-primary rounded-full"></div>
@@ -119,14 +119,14 @@ function UserPublicProfile() {
             </a>
           )}
         </span>
-        <h3 className="text-center my-2 font-semibold text-primary">About</h3>
+        <h3 className="text-center my-2 font-semibold text-primary">{t("publicProfile.about")}</h3>
         <p className="mt-2 text-center md:px-10 my-10 text-text-primary leading-relaxed">
           {userDetails?.userProfile?.bio}
         </p>
 
         {userDetails?.userProfile?.workExperience.length > 0 && (
           <div>
-            <h3 className="text-primary font-semibold mb-4">Work Experience</h3>
+            <h3 className="text-primary font-semibold mb-4">{t("publicProfile.work")}</h3>
 
             {userDetails?.userProfile?.workExperience.map((exp, index) => (
               <div
@@ -135,19 +135,18 @@ function UserPublicProfile() {
               >
                 <div className="flex gap-5 items-center mb-5">
                   <div className="h-16 w-16 rounded-lg overflow-hidden border-2 border-neutral-300 p-1.5 flex justify-center items-center bg-white">
-                    <img src={exp.company.logoUrl} alt="Company Logo" />
+                    <img src={exp.company.logoUrl} alt="" />
                   </div>
                   <div>
                     <p className="font-semibold text-text-primary">{exp.jobTitle}</p>
                     <p className="text-sm text-primary font-medium">{exp.company.name}</p>
                     <p className="text-sm text-text-secondary font-medium">
                       {exp.startMonth && exp.endMonth
-                        ? `${formatDate(exp.startMonth)} to ${formatDate(
-                            exp.endMonth
-                          )} - ${calculateDuration(
-                            exp.startMonth,
-                            exp.endMonth
-                          )}`
+                        ? t("publicProfile.rangeWithDuration", {
+                            start: formatDate(exp.startMonth),
+                            end: formatDate(exp.endMonth),
+                            duration: calculateDuration(exp.startMonth, exp.endMonth),
+                          })
                         : null}
                     </p>
                   </div>
@@ -163,7 +162,7 @@ function UserPublicProfile() {
         )}
         {userDetails?.userProfile?.education?.length > 0 && (
           <div>
-            <h3 className="text-primary font-semibold mb-4">Education</h3>
+            <h3 className="text-primary font-semibold mb-4">{t("publicProfile.education")}</h3>
             {userDetails?.userProfile?.education.map((edu) => (
               <div
                 key={edu._id}
@@ -174,7 +173,7 @@ function UserPublicProfile() {
                     <div className="h-12 w-12 overflow-hidden border-2 border-neutral-300 rounded-md p-1 bg-white">
                       <img
                         src="https://wellfound.com/images/shared/nopic_college.png"
-                        alt="Institution Logo"
+                        alt=""
                       />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -183,8 +182,7 @@ function UserPublicProfile() {
                         {edu.fieldOfStudy}, {edu.degree}
                       </p>
                       <p className="text-text-secondary text-sm">
-                        {formatDate(edu.startYear + "-01")} to{" "}
-                        {formatDate(edu.endYear + "-01")}
+                        {t("publicProfile.range", { start: formatDate(edu.startYear + "-01"), end: formatDate(edu.endYear + "-01") })}
                       </p>
                     </div>
                   </div>
@@ -195,7 +193,7 @@ function UserPublicProfile() {
         )}
         {userDetails?.userProfile?.skills?.length > 0 && (
           <div>
-            <h3 className="text-primary font-semibold mb-4">Skills</h3>
+            <h3 className="text-primary font-semibold mb-4">{t("publicProfile.skills")}</h3>
             <div className="flex gap-3 flex-wrap my-4">
               {userDetails?.userProfile?.skills.map((skill, index) => (
                 <div

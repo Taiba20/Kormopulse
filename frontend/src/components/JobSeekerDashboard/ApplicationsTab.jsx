@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '../../services/userService';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../../i18n/I18nContext';
 
 function ApplicationsTab() {
+  const { t, tOr, formatDate, formatNumber } = useI18n();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,14 +62,14 @@ function ApplicationsTab() {
           <div className="w-16 h-16 mx-auto mb-4 bg-neutral-100 rounded-full flex items-center justify-center">
             <i className="fas fa-paper-plane text-2xl text-neutral-400"></i>
           </div>
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">No Applications Yet</h3>
-          <p className="text-neutral-500 mb-6">Start applying to jobs to see your applications here.</p>
+          <h3 className="text-lg font-medium text-neutral-900 mb-2">{t('seeker.applicationsTab.emptyTitle')}</h3>
+          <p className="text-neutral-500 mb-6">{t('seeker.applicationsTab.emptyText')}</p>
           <Link
             to="/jobs"
             className="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-md hover:bg-primary-dark transition-colors"
           >
             <i className="fas fa-search mr-2"></i>
-            Browse Jobs
+            {t('seeker.overview.browseJobs')}
           </Link>
         </div>
       </div>
@@ -84,8 +86,8 @@ function ApplicationsTab() {
               <i className="fas fa-paper-plane text-primary"></i>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-500">Total</p>
-              <p className="text-lg font-semibold text-neutral-900">{applications.length}</p>
+              <p className="text-sm font-medium text-neutral-500">{t('seeker.applicationsTab.total')}</p>
+              <p className="text-lg font-semibold text-neutral-900">{formatNumber(applications.length)}</p>
             </div>
           </div>
         </div>
@@ -96,9 +98,9 @@ function ApplicationsTab() {
               <i className="fas fa-clock text-warning"></i>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-500">Pending</p>
+              <p className="text-sm font-medium text-neutral-500">{t('seeker.applicationsTab.pending')}</p>
               <p className="text-lg font-semibold text-neutral-900">
-                {applications.filter(app => app.status === 'pending').length}
+                {formatNumber(applications.filter(app => app.status === 'pending').length)}
               </p>
             </div>
           </div>
@@ -110,9 +112,9 @@ function ApplicationsTab() {
               <i className="fas fa-check-circle text-success"></i>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-500">Shortlisted</p>
+              <p className="text-sm font-medium text-neutral-500">{t('seeker.applicationsTab.shortlisted')}</p>
               <p className="text-lg font-semibold text-neutral-900">
-                {applications.filter(app => app.status === 'shortlisted').length}
+                {formatNumber(applications.filter(app => app.status === 'shortlisted').length)}
               </p>
             </div>
           </div>
@@ -124,9 +126,9 @@ function ApplicationsTab() {
               <i className="fas fa-times-circle text-error"></i>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-500">Rejected</p>
+              <p className="text-sm font-medium text-neutral-500">{t('seeker.applicationsTab.rejected')}</p>
               <p className="text-lg font-semibold text-neutral-900">
-                {applications.filter(app => app.status === 'rejected').length}
+                {formatNumber(applications.filter(app => app.status === 'rejected').length)}
               </p>
             </div>
           </div>
@@ -136,8 +138,8 @@ function ApplicationsTab() {
       {/* Applications List */}
       <div className="bg-white rounded-lg shadow-md">
         <div className="p-6 border-b border-neutral-200">
-          <h2 className="text-lg font-semibold text-neutral-900">My Applications</h2>
-          <p className="text-sm text-neutral-500 mt-1">Track the status of your job applications</p>
+          <h2 className="text-lg font-semibold text-neutral-900">{t('seeker.applicationsTab.title')}</h2>
+          <p className="text-sm text-neutral-500 mt-1">{t('seeker.applicationsTab.subtitle')}</p>
         </div>
         
         <div className="divide-y divide-gray-200">
@@ -153,31 +155,31 @@ function ApplicationsTab() {
                     
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-medium text-neutral-900 mb-1">
-                        {application.job?.title || 'Job Title Not Available'}
+                        {application.job?.title || t('seeker.applicationsTab.jobTitleMissing')}
                       </h3>
                       <p className="text-sm text-neutral-600 mb-2">
-                        {application.job?.company?.name || application.job?.company || 'Company Name Not Available'}
+                        {application.job?.company?.name || application.job?.company || t('seeker.applicationsTab.companyMissing')}
                       </p>
                       
                       <div className="flex items-center space-x-4 text-sm text-neutral-500 mb-3">
                         <span className="flex items-center">
                           <i className="fas fa-map-marker-alt mr-1"></i>
-                          {application.job?.location || 'Location not specified'}
+                          {application.job?.location || t('seeker.applicationsTab.locationMissing')}
                         </span>
                         <span className="flex items-center">
                           <i className="fas fa-briefcase mr-1"></i>
-                          {application.job?.jobType || 'Job type not specified'}
+                          {tOr(`enums.jobType.${String(application.job?.jobType || '').toLowerCase()}`, application.job?.jobType) || t('seeker.applicationsTab.jobTypeMissing')}
                         </span>
                         <span className="flex items-center">
                           <i className="fas fa-calendar mr-1"></i>
-                          Applied {new Date(application.createdAt).toLocaleDateString()}
+                          {t('seeker.applicationsTab.applied', { date: formatDate(application.createdAt) })}
                         </span>
                       </div>
                       
                       <div className="flex items-center space-x-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
                           <i className={`${getStatusIcon(application.status)} mr-1`}></i>
-                          {application.status || 'Pending'}
+                          {tOr(`enums.appStatus.${application.status}`, application.status) || t('enums.appStatus.pending')}
                         </span>
                         
                         {application.job?.salaryRange && (
@@ -198,7 +200,7 @@ function ApplicationsTab() {
                       className="inline-flex items-center px-3 py-1 border border-neutral-300 text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
                     >
                       <i className="fas fa-eye mr-1"></i>
-                      View Job
+                      {t('seeker.applicationsTab.viewJob')}
                     </Link>
                   )}
                 </div>
@@ -208,7 +210,7 @@ function ApplicationsTab() {
               {application.coverLetter && (
                 <div className="mt-4 pt-4 border-t border-neutral-100">
                   <p className="text-sm text-neutral-600">
-                    <span className="font-medium">Cover Letter:</span> {application.coverLetter.substring(0, 150)}...
+                    <span className="font-medium">{t('seeker.applicationsTab.coverLetter')}</span> {application.coverLetter.substring(0, 150)}...
                   </p>
                 </div>
               )}
