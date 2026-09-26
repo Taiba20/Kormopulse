@@ -14,6 +14,9 @@ export const getCurrentUser = () => apiCall.get('/users/current-user');
 export const updateUserProfile = (data) => apiCall.put('/users/update-profile', data);
 export const forgotPassword = (data) => apiCall.post('/users/forgot-password', data);
 export const resetPassword = (data) => apiCall.post('/users/reset-password', data);
+export const verifyEmail = (code) => apiCall.post('/users/verify-email', { code });
+export const resendVerification = () => apiCall.post('/users/resend-verification');
+export const googleLogin = (credential, role) => apiCall.post('/users/google', { credential, role });
 
 // Enhanced userService object with all methods
 export const userService = {
@@ -90,8 +93,8 @@ async function saveJob(id) {
   return response.data;
 }
 
-async function applyForJob(id) {
-  const response = await apiCall.post(`/jobs/apply/${id}`, {});
+async function applyForJob(id, data = {}) {
+  const response = await apiCall.post(`/jobs/apply/${id}`, data);
   return response.data;
 }
 

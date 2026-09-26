@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
 import { userService } from '../services/userService';
+import { closeSocket } from '../services/socket';
+import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +13,8 @@ const Navbar = () => {
   const { userData } = useSelector((store) => store.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const dashboardLink =
+    userData?.role === 'employer' ? '/dashboard/home' : userData?.role === 'admin' ? '/admin/overview' : '/my-dashboard';
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -21,6 +26,8 @@ const Navbar = () => {
         navigate('/my-dashboard');
       } else if (userData.role === 'employer') {
         navigate('/dashboard/home');
+      } else if (userData.role === 'admin') {
+        navigate('/admin/overview');
       } else {
         navigate('/');
       }
@@ -33,12 +40,14 @@ const Navbar = () => {
     userService
       .logout()
       .then(() => {
+        closeSocket();
         dispatch(logout());
         navigate('/', { replace: true });
       })
       .catch((error) => {
         console.log(error);
         // Even if logout API fails, clear local state
+        closeSocket();
         dispatch(logout());
         navigate('/', { replace: true });
       });
@@ -86,6 +95,13 @@ const Navbar = () => {
                     </a>
                   </>
                 )}
+                {userData && (
+                  <>
+                    <NotificationBell className="text-text-inverse hover:bg-white/20" />
+                    <ThemeToggle className="text-text-inverse hover:bg-white/20" />
+                  </>
+                )}
+                {!userData && <ThemeToggle className="text-text-inverse hover:bg-white/20" />}
                 {userData ? (
                   <div className="relative">
                     <button
@@ -113,7 +129,7 @@ const Navbar = () => {
                     {showProfileDropdown && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                         <Link
-                          to={userData.role === 'employer' ? '/dashboard/home' : '/my-dashboard'}
+                          to={dashboardLink}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowProfileDropdown(false)}
                         >
@@ -194,16 +210,21 @@ const Navbar = () => {
           >
             Home
           </button>
+          <div className="flex items-center gap-2 px-3 py-1">
+            {userData && <NotificationBell className="text-text-inverse hover:bg-white/20" />}
+            <ThemeToggle className="text-text-inverse hover:bg-white/20" />
+            <span className="text-sm text-text-inverse/80">Toggle theme</span>
+          </div>
           {userData && (
             <>
               <a
-                href="#"
+                href="/jobs"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
                 Find Jobs
               </a>
               <a
-                href="#"
+                href="/companies"
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
                 Companies
@@ -213,7 +234,7 @@ const Navbar = () => {
           {userData ? (
             <>
               <Link
-                to={userData.role === 'employer' ? '/dashboard/home' : '/my-dashboard'}
+                to={dashboardLink}
                 className="text-text-inverse hover:text-text-inverse hover:bg-white/20 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300 hover:scale-105"
               >
                 Dashboard

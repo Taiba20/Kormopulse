@@ -6,6 +6,7 @@ import { registerUser, getCurrentUser } from '../../services/userService';
 import { useNavigate } from "react-router-dom";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
+import GoogleSignInButton from './GoogleSignInButton';
 
 function Signup() {
   const dispatch = useDispatch();
@@ -85,6 +86,11 @@ function Signup() {
     finally{
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (loggedInUser) => {
+    await updateUser();
+    navigate(loggedInUser.role === "jobSeeker" ? "/user-onboarding" : "/company-onboarding");
   };
 
   const handleInputChange = (e) => {
@@ -227,24 +233,12 @@ function Signup() {
               </div>
             </form>
 
-            {/* Hidden signup with google */}
-            <div className="hidden">
-              <div className="flex items-center justify-center gap-5 my-4">
-                <div className="bg-gray-400 h-px w-1/4"></div>
-                <p className=" text-gray-400 text-sm">or Login with Email</p>
-                <div className="bg-gray-400 h-px w-1/4"></div>
-              </div>
-              <button className="px-10 items-center justify-center gap-2 flex h-11 rounded-md text-black text-sm w-full border-x border-y border-gray-400">
-                <img
-                  className="w-10 p-1"
-                  src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-suite-everything-you-need-know-about-google-newest-0.png"
-                  alt="Google Sign-In"
-                />
-                <span className="text-black font-normal">
-                  Sign in with Google
-                </span>
-              </button>
+            <div className="flex items-center justify-center gap-5 my-4">
+              <div className="bg-neutral-300 h-px w-1/4"></div>
+              <p className="text-text-muted text-sm">or</p>
+              <div className="bg-neutral-300 h-px w-1/4"></div>
             </div>
+            <GoogleSignInButton onAuthenticated={handleGoogleSuccess} onError={setErrorMessage} initialRole={userType} />
             <div className="mt-3">
               <p className=" cursor-pointer text-center text-text-secondary">
                 Already have an account?

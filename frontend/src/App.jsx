@@ -6,9 +6,10 @@ import useUpdateUserData from "./hooks/useUpdateUserData";
 import { useEffect, useState } from "react"; 
 import CompanyDashboard from "./Pages/CompanyDashboard";
 import { setLoadingFalse } from "./store/authSlice";
+import EmailVerificationBanner from "./components/EmailVerificationBanner";
 
 function App() {
-  const { userData, loading } = useSelector((store) => store.auth);
+  const { loading } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
   const location = useLocation();
   const hideOnRoutes = ["/login", "/signup", "/forgot-password"];
@@ -44,7 +45,17 @@ function App() {
       <div>
         {!(
           hideOnRoutes.includes(location.pathname)
-        ) && <Navbar />}
+        ) && (
+          <>
+            <Navbar />
+            {/* Fixed, like the navbar it sits below: pages already reserve space for the
+                navbar's height individually (mt-16), so this floats above content rather
+                than trying to add to that per-page spacing. */}
+            <div className="fixed top-16 left-0 right-0 z-40">
+              <EmailVerificationBanner />
+            </div>
+          </>
+        )}
         <AllRoutes />
       </div>
     </>

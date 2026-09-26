@@ -1,0 +1,78 @@
+/*
+ * Dark mode, activated by <html data-theme="dark">.
+ *
+ * Tailwind v4 compiles every utility class to reference a CSS custom property
+ * (e.g. `.bg-white { background-color: var(--color-white) }`,
+ * `.text-gray-500 { color: var(--color-gray-500) }`). Redefining those variables
+ * under a more specific selector re-themes every existing `bg-*`/`text-*`/`border-*`
+ * usage in the app without editing each component. `:root[data-theme="dark"]` has
+ * higher specificity than Tailwind's own `:root` defaults, so it always wins
+ * regardless of CSS source order.
+ */
+:root[data-theme="dark"] {
+  /* ---- Kormopulse design tokens (src/index.css) ---- */
+  --color-neutral-50: #17181c;
+  --color-neutral-100: #1d1f24;
+  --color-neutral-200: #2a2d34;
+  --color-neutral-300: #3a3e47;
+  --color-neutral-400: #5b6068;
+  --color-neutral-500: #8b909a;
+  --color-neutral-600: #a7acb5;
+  --color-neutral-700: #c4c8d0;
+  --color-neutral-800: #e2e4e8;
+  --color-neutral-900: #f5f6f8;
+
+  --color-background: #121316;
+  --color-background-secondary: #1a1c20;
+  --color-background-tertiary: #202329;
+
+  --color-text-primary: #f1f2f4;
+  --color-text-secondary: #a7acb5;
+  --color-text-muted: #7a7f88;
+  /* --color-text-inverse stays light: it is for text on colored surfaces (buttons,
+     the brand gradient), which look the same regardless of the page theme. */
+
+  /* ---- Tailwind's built-in default palette, used directly in places (bg-white,
+     text-gray-700, border-red-200, ...) instead of the tokens above ---- */
+  --color-white: #1e2126;
+  --color-black: #d4d6db;
+
+  --color-gray-50: #17181c;
+  --color-gray-100: #1d1f24;
+  --color-gray-200: #2a2d34;
+  --color-gray-300: #3a3e47;
+  --color-gray-400: #5b6068;
+  --color-gray-500: #8b909a;
+  --color-gray-600: #a7acb5;
+  --color-gray-700: #c4c8d0;
+  --color-gray-800: #e2e4e8;
+  --color-gray-900: #f5f6f8;
+
+  --color-red-50: #2a1414;
+  --color-red-100: #3a1a1a;
+  --color-red-200: #4a2323;
+  --color-red-400: #f87171;
+  --color-red-500: #fb7185;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+
+  --color-green-50: #0f2318;
+  --color-green-100: #14301f;
+  --color-green-200: #1c4a2c;
+  --color-green-400: #4ade80;
+  --color-green-500: #34d399;
+  --color-green-600: #4ade80;
+  --color-green-700: #6ee7a0;
+  --color-green-800: #86efac;
+
+  --color-blue-100: #16233a;
+  --color-blue-500: #60a5fa;
+  --color-blue-600: #7cb0fa;
+  --color-blue-800: #bfdbfe;
+
+  --color-indigo-600: #818cf8;
+
+  /* Lets form controls, scrollbars, etc. pick up sensible dark styling automatically */
+  color-scheme: dark;
+}

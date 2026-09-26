@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100..900&display=swap');
 @import "tailwindcss";
+@import "./dark-mode.css";
 
 
 @theme {
@@ -53,4 +54,9 @@
 
 * {
   font-family: var(--font-poppins);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }

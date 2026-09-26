@@ -6,6 +6,7 @@ import { loginUser } from '../../services/userService';
 import { useNavigate } from "react-router-dom";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
+import GoogleSignInButton from './GoogleSignInButton';
 
 function Login() {
   const dispatch = useDispatch();
@@ -38,6 +39,21 @@ function Login() {
     makeLoginRequest(formData);
   };
 
+  const redirectAfterLogin = (loggedInUser) => {
+    if (loggedInUser.role === "jobSeeker") {
+      const hasProfile = loggedInUser.jobSeekerProfile || loggedInUser.userProfile?.doneOnboarding;
+      navigate(hasProfile ? "/my-dashboard" : "/user-onboarding", { state: { fromLogin: true } });
+    } else if (loggedInUser.role === "employer") {
+      const hasProfile = loggedInUser.companyProfile || loggedInUser.userProfile?.doneOnboarding;
+      navigate(hasProfile ? "/dashboard/home" : "/company-onboarding", { state: { fromLogin: true } });
+    }
+  };
+
+  const handleGoogleSuccess = async (loggedInUser) => {
+    await updateUser();
+    redirectAfterLogin(loggedInUser);
+  };
+
   const makeLoginRequest = async (userData) => {
     dispatch(loginStart());
     setLoading(true);
@@ -45,31 +61,11 @@ function Login() {
       const response = await loginUser(userData);
       const loggedInUser = response.data.data.user;
       dispatch(loginSuccess(loggedInUser));
-      //alert('Login successful!');
-      
+
       // Update user data in Redux store
       await updateUser();
-      
-      // Navigate based on user role and onboarding status
-      if (loggedInUser.role === "jobSeeker") {
-        // Check if user has a jobSeekerProfile and if onboarding is done
-        const hasProfile = loggedInUser.jobSeekerProfile || loggedInUser.userProfile?.doneOnboarding;
-        if (hasProfile) {
-          navigate("/my-dashboard", { state: { fromLogin: true } });
-        } else {
-          navigate("/user-onboarding");
-        }
-      } else if (loggedInUser.role === "employer") {
-        // Check if user has a companyProfile and if onboarding is done
-        const hasProfile = loggedInUser.companyProfile || loggedInUser.userProfile?.doneOnboarding;
-        if (hasProfile) {
-          console.log("Sending to dashboard");
-          navigate("/dashboard/home", { state: { fromLogin: true } });
-        } else {
-          console.log(loggedInUser);
-          navigate("/company-onboarding");
-        }
-      }
+
+      redirectAfterLogin(loggedInUser);
     } catch (error) {
       dispatch(loginFailure());
       setErrorMessage(error.response?.data?.message || 'Login failed.');
@@ -153,29 +149,14 @@ function Login() {
                 </button>
               </div>
 
-              {/* Temp Hidden */}
-              <div className="hidden">
-                <div className="flex items-center justify-center gap-5 my-6">
-                  <div className="bg-gray-400 h-px w-1/4"></div>
-                  <p className="text-gray-400 text-sm">or Login with Google</p>
-                  <div className="bg-gray-400 h-px w-1/4"></div>
-                </div>
+              <div className="flex items-center justify-center gap-5 my-6">
+                <div className="bg-neutral-300 h-px w-1/4"></div>
+                <p className="text-text-muted text-sm">or</p>
+                <div className="bg-neutral-300 h-px w-1/4"></div>
               </div>
             </form>
 
-            {/* Hidden google login button */}
-            <button className="hidden">
-              <div className="px-10 flex items-center justify-center gap-2 h-11 rounded-md text-black text-sm w-full border-x border-y border-gray-400">
-                <img
-                  className="w-10 p-1"
-                  src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-suite-everything-you-need-know-about-google-newest-0.png"
-                  alt="Google Sign-In"
-                />
-                <span className="text-black font-normal">
-                  Sign in with Google
-                </span>
-              </div>
-            </button>
+            <GoogleSignInButton onAuthenticated={handleGoogleSuccess} onError={setErrorMessage} />
             <div className="mt-5">
               <p className="cursor-pointer text-center text-text-secondary">
                 Don't have an account?{" "}
