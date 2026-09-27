@@ -23,6 +23,12 @@ import {
   resendVerification,
   googleLogin,
   updateLanguage,
+  verifyTwoFactorLogin,
+  setupTwoFactor,
+  enableTwoFactor,
+  disableTwoFactor,
+  regenerateTwoFactorBackupCodes,
+  getTwoFactorStatus,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -35,6 +41,9 @@ import {
   verifyEmailSchema,
   googleLoginSchema,
   updateLanguageSchema,
+  twoFactorTokenSchema,
+  twoFactorLoginVerifySchema,
+  twoFactorDisableSchema,
 } from "../validators/auth.schemas.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -65,5 +74,14 @@ router.route("/verify-email").post(authLimiter, verifyJWT, validate(verifyEmailS
 router.route("/resend-verification").post(authLimiter, verifyJWT, resendVerification);
 router.route("/google").post(authLimiter, validate(googleLoginSchema), googleLogin);
 router.route("/language").patch(verifyJWT, validate(updateLanguageSchema), updateLanguage);
+
+// Two-factor authentication: /2fa/login-verify is the second login step (no session yet, so no
+// verifyJWT); the rest manage 2FA on an already-authenticated account.
+router.route("/2fa/login-verify").post(authLimiter, validate(twoFactorLoginVerifySchema), verifyTwoFactorLogin);
+router.route("/2fa/status").get(verifyJWT, getTwoFactorStatus);
+router.route("/2fa/setup").post(verifyJWT, authLimiter, setupTwoFactor);
+router.route("/2fa/enable").post(verifyJWT, authLimiter, validate(twoFactorTokenSchema), enableTwoFactor);
+router.route("/2fa/disable").post(verifyJWT, authLimiter, validate(twoFactorDisableSchema), disableTwoFactor);
+router.route("/2fa/backup-codes/regenerate").post(verifyJWT, authLimiter, validate(twoFactorTokenSchema), regenerateTwoFactorBackupCodes);
 
 export default router;

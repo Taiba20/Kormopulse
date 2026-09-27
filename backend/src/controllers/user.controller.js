@@ -24,6 +24,16 @@ import {
   isInResendCooldown,
 } from "../utils/otp.js";
 import crypto from "crypto";
+import {
+  generateTwoFactorSecret,
+  twoFactorOtpauthUrl,
+  twoFactorQrCodeDataUrl,
+  verifyTwoFactorToken,
+  generateBackupCodes,
+  consumeBackupCode,
+  signPendingTwoFactorToken,
+  readPendingTwoFactorToken,
+} from "../utils/twoFactor.js";
 
 const cookieOptions = {
   httpOnly: true,
@@ -76,6 +86,19 @@ const setAuthCookies = (res, accessToken, refreshToken) =>
   res
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions);
+
+/** Issues real session tokens and the success response, shared by every path that finishes a login. */
+const completeLogin = async (res, user, message) => {
+  user.lastLoginAt = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(user._id);
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+  return setAuthCookies(res.status(200), accessToken, refreshToken).json(
+    new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, message)
+  );
+};
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role, language } = req.body; // validated by zod: role is jobSeeker | employer
@@ -140,26 +163,15 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Your account has been suspended. Contact support for help.");
   }
 
-  user.lastLoginAt = new Date();
-  await user.save({ validateBeforeSave: false });
-
-  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(
-    user._id
-  );
-
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(
-      new ApiResponse(
-        200,
-        { user: loggedInUser, accessToken, refreshToken },
-        "User login successful"
-      )
+  if (user.twoFactorEnabled) {
+    // The password is correct, but the session isn't granted yet: the client must redeem this
+    // token with a code from their authenticator app at /users/2fa/login-verify.
+    return res.status(200).json(
+      new ApiResponse(200, { twoFactorRequired: true, twoFactorToken: signPendingTwoFactorToken(user._id) }, "Enter your two-factor code")
     );
+  }
+
+  return completeLogin(res, user, "User login successful");
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -722,14 +734,125 @@ const googleLogin = asyncHandler(async (req, res) => {
     if (user.emailVerified === false) user.emailVerified = true; // Google already verified it
   }
 
-  user.lastLoginAt = new Date();
+  if (user.twoFactorEnabled) {
+    return res.status(200).json(
+      new ApiResponse(200, { twoFactorRequired: true, twoFactorToken: signPendingTwoFactorToken(user._id) }, "Enter your two-factor code")
+    );
+  }
+
+  return completeLogin(res, user, "Google sign-in successful");
+});
+
+// ---- Two-factor authentication (TOTP) ---------------------------------------------
+
+/** Step 2 of login for an account with 2FA enabled: redeem the pending token with a code. */
+const verifyTwoFactorLogin = asyncHandler(async (req, res) => {
+  const { twoFactorToken, code } = req.body;
+
+  const userId = readPendingTwoFactorToken(twoFactorToken);
+  if (!userId) throw new ApiError(401, "This two-factor session has expired. Please log in again.");
+
+  const user = await User.findById(userId).select("+twoFactorSecret +twoFactorBackupCodeHashes");
+  if (!user) throw new ApiError(404, "User not found");
+  if (!user.twoFactorEnabled) throw new ApiError(400, "Two-factor authentication is not enabled for this account");
+  if (user.isSuspended) throw new ApiError(403, "Your account has been suspended. Contact support for help.");
+
+  const isTotpValid = await verifyTwoFactorToken(user.twoFactorSecret, code);
+  if (isTotpValid) {
+    return completeLogin(res, user, "User login successful");
+  }
+
+  const { valid, remainingHashes } = consumeBackupCode(user.twoFactorBackupCodeHashes, code);
+  if (!valid) throw new ApiError(401, "Invalid or expired two-factor code");
+
+  user.twoFactorBackupCodeHashes = remainingHashes;
+  await user.save({ validateBeforeSave: false });
+  return completeLogin(res, user, "User login successful");
+});
+
+/** Starts setup: generates a secret and returns a QR code, but doesn't enable 2FA yet. */
+const setupTwoFactor = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (user.twoFactorEnabled) throw new ApiError(400, "Two-factor authentication is already enabled. Disable it first to set up a new device.");
+
+  const secret = generateTwoFactorSecret();
+  user.twoFactorPendingSecret = secret;
   await user.save({ validateBeforeSave: false });
 
-  const { refreshToken, accessToken } = await generateAccessAndRefereshTokens(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const otpauthUrl = twoFactorOtpauthUrl(user.email, secret);
+  const qrCode = await twoFactorQrCodeDataUrl(otpauthUrl);
+  return res.status(200).json(new ApiResponse(200, { secret, otpauthUrl, qrCode }, "Scan the QR code with your authenticator app"));
+});
 
-  return setAuthCookies(res.status(200), accessToken, refreshToken).json(
-    new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "Google sign-in successful")
+/** Confirms setup with a code from the app, turns 2FA on, and issues one-time backup codes. */
+const enableTwoFactor = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user._id).select("+twoFactorPendingSecret");
+  if (user.twoFactorEnabled) throw new ApiError(400, "Two-factor authentication is already enabled");
+  if (!user.twoFactorPendingSecret) throw new ApiError(400, "Start setup first by requesting a QR code");
+
+  const isValid = await verifyTwoFactorToken(user.twoFactorPendingSecret, token);
+  if (!isValid) throw new ApiError(401, "That code didn't match. Check your authenticator app and try again.");
+
+  const { plaintext, hashes } = generateBackupCodes();
+  user.twoFactorSecret = user.twoFactorPendingSecret;
+  user.twoFactorPendingSecret = undefined;
+  user.twoFactorEnabled = true;
+  user.twoFactorBackupCodeHashes = hashes;
+  await user.save({ validateBeforeSave: false });
+
+  void notify(user._id, { type: "system", key: "twoFactorEnabled" });
+  return res.status(200).json(new ApiResponse(200, { backupCodes: plaintext }, "Two-factor authentication is now enabled"));
+});
+
+/** Turns 2FA off. Requires the password and a current code, so a hijacked session alone can't disable it. */
+const disableTwoFactor = asyncHandler(async (req, res) => {
+  const { password, code } = req.body;
+  const user = await User.findById(req.user._id).select("+twoFactorSecret +twoFactorBackupCodeHashes");
+  if (!user.twoFactorEnabled) throw new ApiError(400, "Two-factor authentication is not enabled");
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) throw new ApiError(401, "Current password is incorrect");
+
+  const isTotpValid = await verifyTwoFactorToken(user.twoFactorSecret, code);
+  const { valid: isBackupValid } = isTotpValid ? { valid: false } : consumeBackupCode(user.twoFactorBackupCodeHashes, code);
+  if (!isTotpValid && !isBackupValid) throw new ApiError(401, "Invalid or expired two-factor code");
+
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = undefined;
+  user.twoFactorPendingSecret = undefined;
+  user.twoFactorBackupCodeHashes = [];
+  await user.save({ validateBeforeSave: false });
+
+  void notify(user._id, { type: "system", key: "twoFactorDisabled" });
+  return res.status(200).json(new ApiResponse(200, {}, "Two-factor authentication is now disabled"));
+});
+
+/** Invalidates old backup codes and issues a fresh set. Requires a current authenticator code. */
+const regenerateTwoFactorBackupCodes = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user._id).select("+twoFactorSecret");
+  if (!user.twoFactorEnabled) throw new ApiError(400, "Two-factor authentication is not enabled");
+
+  const isValid = await verifyTwoFactorToken(user.twoFactorSecret, token);
+  if (!isValid) throw new ApiError(401, "That code didn't match. Check your authenticator app and try again.");
+
+  const { plaintext, hashes } = generateBackupCodes();
+  user.twoFactorBackupCodeHashes = hashes;
+  await user.save({ validateBeforeSave: false });
+
+  void notify(user._id, { type: "system", key: "twoFactorBackupCodesRegenerated" });
+  return res.status(200).json(new ApiResponse(200, { backupCodes: plaintext }, "New backup codes generated"));
+});
+
+/** For the account settings screen: whether 2FA is on, and how many backup codes are left. */
+const getTwoFactorStatus = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("+twoFactorBackupCodeHashes");
+  return res.status(200).json(
+    new ApiResponse(200, {
+      enabled: user.twoFactorEnabled,
+      backupCodesRemaining: user.twoFactorEnabled ? user.twoFactorBackupCodeHashes.length : 0,
+    }, "Two-factor status fetched")
   );
 });
 
@@ -756,5 +879,11 @@ export {
   resetPassword,
   verifyEmail,
   resendVerification,
-  googleLogin
+  googleLogin,
+  verifyTwoFactorLogin,
+  setupTwoFactor,
+  enableTwoFactor,
+  disableTwoFactor,
+  regenerateTwoFactorBackupCodes,
+  getTwoFactorStatus,
 };
