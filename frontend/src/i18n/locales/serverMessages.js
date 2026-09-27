@@ -24,6 +24,7 @@ export const bnServerMessages = {
   "Invalid Access Token": "অবৈধ অ্যাক্সেস টোকেন",
   "Invalid access token": "অবৈধ অ্যাক্সেস টোকেন",
   "Invalid or expired code": "কোডটি ভুল অথবা মেয়াদোত্তীর্ণ",
+  "Invalid or expired two-factor code": "কোডটি ভুল অথবা মেয়াদোত্তীর্ণ",
   "Invalid user credentials": "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়",
   "Job is already saved": "চাকরিটি ইতিমধ্যে সংরক্ষিত আছে",
   "Job is not saved": "চাকরিটি সংরক্ষিত নেই",
@@ -59,10 +60,20 @@ export const bnServerMessages = {
   "Review not found": "রিভিউ খুঁজে পাওয়া যায়নি",
   "Skill is required": "দক্ষতা দিতে হবে",
   "Something went wrong while registering the user": "নিবন্ধনের সময় কিছু একটা ভুল হয়েছে",
+  "Start setup first by requesting a QR code": "প্রথমে QR কোড চেয়ে সেটআপ শুরু করুন",
+  "That code didn't match. Check your authenticator app and try again.":
+    "কোডটি মেলেনি। আপনার অথেনটিকেটর অ্যাপ দেখে আবার চেষ্টা করুন।",
   "That time slot has already passed": "সেই সময়টি পার হয়ে গেছে",
+  "This two-factor session has expired. Please log in again.":
+    "এই দ্বি-স্তর সেশনের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে আবার লগইন করুন।",
   "This file could not be read. Make sure it is a valid, unprotected PDF or DOCX.":
     "ফাইলটি পড়া যায়নি। নিশ্চিত করুন এটি সঠিক, পাসওয়ার্ডবিহীন PDF বা DOCX ফাইল।",
   "This job is no longer accepting applications": "এই চাকরিতে আর আবেদন গ্রহণ করা হচ্ছে না",
+  "Two-factor authentication is already enabled": "দ্বি-স্তর যাচাইকরণ ইতিমধ্যে চালু আছে",
+  "Two-factor authentication is already enabled. Disable it first to set up a new device.":
+    "দ্বি-স্তর যাচাইকরণ ইতিমধ্যে চালু আছে। নতুন ডিভাইস সেটআপ করতে আগে এটি বন্ধ করুন।",
+  "Two-factor authentication is not enabled": "দ্বি-স্তর যাচাইকরণ চালু নেই",
+  "Two-factor authentication is not enabled for this account": "এই অ্যাকাউন্টের জন্য দ্বি-স্তর যাচাইকরণ চালু নেই",
   "Unauthorized or job not found": "অনুমতি নেই অথবা চাকরি খুঁজে পাওয়া যায়নি",
   "Unauthorized request": "অনুমতিবিহীন অনুরোধ",
   "Unauthorized request, only employers are allowed": "অনুমতিবিহীন অনুরোধ, শুধু নিয়োগকর্তারা পারেন",

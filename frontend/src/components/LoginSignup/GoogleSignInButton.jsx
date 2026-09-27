@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useDispatch } from "react-redux";
-import { loginStart, loginSuccess, loginFailure } from "../../store/authSlice";
+import { loginSuccess } from "../../store/authSlice";
 import { userService } from "../../services/userService";
+import TwoFactorPrompt from "../Common/TwoFactorPrompt";
 import { useI18n } from "../../i18n/I18nContext";
 
 const GOOGLE_CONFIGURED = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
@@ -16,32 +17,48 @@ function GoogleSignInButton({ onAuthenticated, onError, initialRole }) {
   const dispatch = useDispatch();
   const { t, tError, lang } = useI18n();
   const [pendingCredential, setPendingCredential] = useState(null);
+  const [twoFactorToken, setTwoFactorToken] = useState(null);
   const [busy, setBusy] = useState(false);
 
   if (!GOOGLE_CONFIGURED) return null;
 
   const finish = async (credential, role) => {
-    dispatch(loginStart());
+    // Note: deliberately not dispatching the Redux loginStart/loginFailure actions here -- see
+    // the matching comment in Login.jsx's makeLoginRequest for why that would unmount this
+    // component (and lose pendingCredential/twoFactorToken) on every attempt.
     setBusy(true);
     try {
       const response = await userService.googleLogin(credential, role, lang);
-      const { needsRole, user } = response.data.data;
+      const { needsRole, twoFactorRequired, twoFactorToken: token, user } = response.data.data;
       if (needsRole) {
         setPendingCredential(credential);
-        dispatch(loginFailure());
+        return;
+      }
+      if (twoFactorRequired) {
+        setPendingCredential(null);
+        setTwoFactorToken(token);
         return;
       }
       setPendingCredential(null);
       dispatch(loginSuccess(user));
       onAuthenticated?.(user);
     } catch (error) {
-      dispatch(loginFailure());
       setPendingCredential(null);
       onError?.(tError(error, "auth.google.failed"));
     } finally {
       setBusy(false);
     }
   };
+
+  const handleTwoFactorVerified = (user) => {
+    setTwoFactorToken(null);
+    dispatch(loginSuccess(user));
+    onAuthenticated?.(user);
+  };
+
+  if (twoFactorToken) {
+    return <TwoFactorPrompt twoFactorToken={twoFactorToken} onVerified={handleTwoFactorVerified} onBack={() => setTwoFactorToken(null)} />;
+  }
 
   if (pendingCredential) {
     return (

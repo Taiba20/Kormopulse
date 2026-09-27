@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from 'react-redux';
-import { loginStart, loginSuccess, loginFailure } from '../../store/authSlice';
+import { loginSuccess } from '../../store/authSlice';
 import { loginUser } from '../../services/userService';
 import { useNavigate } from "react-router-dom";
 import useUpdateUserData from "../../hooks/useUpdateUserData";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import GoogleSignInButton from './GoogleSignInButton';
+import TwoFactorPrompt from '../Common/TwoFactorPrompt';
 import { useI18n } from '../../i18n/I18nContext';
 
 function Login() {
   const { t, tError } = useI18n();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [twoFactorToken, setTwoFactorToken] = useState(null);
   const navigate = useNavigate();
   const updateUser = useUpdateUserData();
 
@@ -57,11 +59,23 @@ function Login() {
   };
 
   const makeLoginRequest = async (userData) => {
-    dispatch(loginStart());
+    // Note: this deliberately does NOT dispatch the Redux loginStart/loginFailure actions.
+    // Those toggle store.auth.loading, which App.jsx watches to swap its whole tree for a
+    // full-page spinner -- that would unmount this component (and this form's local state,
+    // including a pending two-factor token) on every login attempt. Submission state is
+    // tracked with the local `loading` state below instead; loginSuccess is still dispatched
+    // once we actually have a session, since that's the real source of truth for auth state.
     setLoading(true);
     try {
       const response = await loginUser(userData);
-      const loggedInUser = response.data.data.user;
+      const { twoFactorRequired, twoFactorToken: token, user: loggedInUser } = response.data.data;
+
+      if (twoFactorRequired) {
+        // Password was correct, but the session isn't granted until the second factor is verified.
+        setTwoFactorToken(token);
+        return;
+      }
+
       dispatch(loginSuccess(loggedInUser));
 
       // Update user data in Redux store
@@ -69,12 +83,17 @@ function Login() {
 
       redirectAfterLogin(loggedInUser);
     } catch (error) {
-      dispatch(loginFailure());
       setErrorMessage(tError(error, 'auth.login.failed'));
       resetErrorMessage();
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTwoFactorVerified = async (loggedInUser) => {
+    dispatch(loginSuccess(loggedInUser));
+    await updateUser();
+    redirectAfterLogin(loggedInUser);
   };
 
   return (
@@ -99,6 +118,14 @@ function Login() {
 
         <div className="w-full sm:w-3/6 pt-7 sm:pt-14 md:w-2/5">
           <div className="p-3 sm:p-10">
+            {twoFactorToken ? (
+              <TwoFactorPrompt
+                twoFactorToken={twoFactorToken}
+                onVerified={handleTwoFactorVerified}
+                onBack={() => setTwoFactorToken(null)}
+              />
+            ) : (
+            <>
             <h2 className="text-3xl font-bold text-text-primary">{t('auth.login.title')}</h2>
             <p className="mt-3 text-text-secondary">{t('auth.login.subtitle')}</p>
             <form className="mt-6" onSubmit={handleFormSubmission}>
@@ -170,6 +197,8 @@ function Login() {
                 </Link>
               </p>
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>
