@@ -70,6 +70,7 @@ export const startTestEnv = async ({ socket = false, env = {} } = {}) => {
     Notification: (await import("../src/models/notification.model.js")).Notification,
     Interview: (await import("../src/models/interview.model.js")).Interview,
     JobAlert: (await import("../src/models/jobAlert.model.js")).JobAlert,
+    SavedSearch: (await import("../src/models/savedSearch.model.js")).SavedSearch,
     CompanyReview: (await import("../src/models/companyReview.model.js")).CompanyReview,
     Message: (await import("../src/models/message.model.js")).Message,
   };
