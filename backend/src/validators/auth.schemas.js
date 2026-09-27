@@ -55,3 +55,24 @@ export const googleLoginSchema = z.object({
 });
 
 export const updateLanguageSchema = z.object({ language: languageEnum });
+
+// A 6-digit code from an authenticator app, required to set up or confirm 2FA.
+export const twoFactorTokenSchema = z.object({ token: code });
+
+// At login (and when disabling 2FA) either a 6-digit authenticator code or a longer backup
+// code ("XXXXX-XXXXX") is accepted, so this is looser than `code` above.
+const twoFactorCode = z
+  .string({ error: "Code is required" })
+  .trim()
+  .min(6, { error: "Enter your 6-digit code or a backup code" })
+  .max(20, { error: "Code is too long" });
+
+export const twoFactorLoginVerifySchema = z.object({
+  twoFactorToken: z.string({ error: "Two-factor token is required" }).min(10, { error: "Two-factor token is required" }),
+  code: twoFactorCode,
+});
+
+export const twoFactorDisableSchema = z.object({
+  password: z.string({ error: "Password is required" }).min(1, { error: "Password is required" }),
+  code: twoFactorCode,
+});

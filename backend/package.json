@@ -32,6 +32,8 @@
     "multer": "^2.0.2",
     "node-cron": "^4.6.0",
     "nodemailer": "^10.0.10",
+    "otplib": "^13.5.0",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.8.4",
     "swagger-ui-express": "^5.0.1",
     "unpdf": "^1.8.1",

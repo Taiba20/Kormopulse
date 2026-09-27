@@ -133,6 +133,9 @@ const messages = {
       alertDigest_other: { title: "{count} new jobs for \"{label}\"" },
       alertInstant: { title: "New job for \"{label}\"", message: "{jobTitle} at {companyName}" },
       aCompany: "a company",
+      twoFactorEnabled: { title: "Two-factor authentication turned on", message: "Your account now requires a code from your authenticator app to sign in." },
+      twoFactorDisabled: { title: "Two-factor authentication turned off", message: "Your account no longer requires a second step to sign in. Turn it back on if this wasn't you." },
+      twoFactorBackupCodesRegenerated: { title: "New backup codes generated", message: "Your old two-factor backup codes no longer work." },
     },
   },
   bn: {
@@ -260,6 +263,9 @@ const messages = {
       alertDigest_other: { title: "\"{label}\"-এর জন্য {count}টি নতুন চাকরি" },
       alertInstant: { title: "\"{label}\"-এর জন্য নতুন চাকরি", message: "{companyName}-এ {jobTitle}" },
       aCompany: "একটি কোম্পানি",
+      twoFactorEnabled: { title: "দ্বি-স্তর যাচাইকরণ চালু হয়েছে", message: "সাইন ইন করতে এখন আপনার অথেনটিকেটর অ্যাপের একটি কোড প্রয়োজন হবে।" },
+      twoFactorDisabled: { title: "দ্বি-স্তর যাচাইকরণ বন্ধ হয়েছে", message: "সাইন ইন করতে এখন আর দ্বিতীয় ধাপের প্রয়োজন নেই। এটি আপনি না করে থাকলে আবার চালু করুন।" },
+      twoFactorBackupCodesRegenerated: { title: "নতুন ব্যাকআপ কোড তৈরি হয়েছে", message: "আপনার পুরনো দ্বি-স্তর ব্যাকআপ কোডগুলো আর কাজ করবে না।" },
     },
   },
 };
