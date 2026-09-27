@@ -14,5 +14,7 @@ import admin from "./bn/admin.js";
 import onboarding from "./bn/onboarding.js";
 import posting from "./bn/posting.js";
 import jobRoles from "./bn/jobRoles.js";
+import twoFactor from "./bn/twoFactor.js";
+import savedSearches from "./bn/savedSearches.js";
 
-export default { ...common, ...home, ...auth, ...jobs, ...seeker, ...employer, ...applicants, ...analytics, ...profile, ...workflow, ...tools, ...discover, ...admin, ...onboarding, ...posting, ...jobRoles };
+export default { ...common, ...home, ...auth, ...jobs, ...seeker, ...employer, ...applicants, ...analytics, ...profile, ...workflow, ...tools, ...discover, ...admin, ...onboarding, ...posting, ...jobRoles, ...twoFactor, ...savedSearches };

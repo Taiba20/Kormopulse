@@ -23,6 +23,7 @@ import ForgotPassword from "../Pages/ForgotPassword";
 import Pipeline from "../Pages/Pipeline";
 import Interviews from "../Pages/Interviews";
 import JobAlerts from "../Pages/JobAlerts";
+import SavedSearches from "../Pages/SavedSearches";
 import SalaryInsights from "../Pages/SalaryInsights";
 import CompanyProfilePublic from "../Pages/CompanyProfilePublic";
 import AdminDashboard from "../Pages/AdminDashboard";
@@ -107,6 +108,9 @@ function AllRoutes() {
 
       {/* Job seeker alerts */}
       <Route path="/alerts" element={<PrivateRoutes><JobAlerts /></PrivateRoutes>} />
+
+      {/* Job seeker saved searches */}
+      <Route path="/saved-searches" element={<PrivateRoutes><SavedSearches /></PrivateRoutes>} />
 
       {/* Salary insights (public) */}
       <Route path="/salary-insights" element={<SalaryInsights />} />

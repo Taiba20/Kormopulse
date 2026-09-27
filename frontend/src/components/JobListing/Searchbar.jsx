@@ -2,11 +2,20 @@ import React, { useEffect, useState } from "react";
 import { contentService } from "../../services/contentService";
 import { useI18n } from "../../i18n/I18nContext";
 
-function Searchbar({ setSearch, setSelectedLocation }) {
+// `initialSearch`/`initialLocationQuery` only matter at mount (e.g. re-running a saved search);
+// the parent remounts this component with a fresh `key` whenever it wants to apply new ones.
+function Searchbar({ setSearch, setSelectedLocation, initialSearch = "", initialLocationQuery = "" }) {
   const { t } = useI18n();
   const [location, setLocation] = useState([]);
-  const [locationQuery, setLocationQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState(initialLocationQuery);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+    if (initialLocationQuery) setSelectedLocation(initialLocationQuery);
+    // Only meant to run once, right after a remount triggered by loading a saved search.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleInputChange = (e) => {
     setSearch(e.target.value);
@@ -60,6 +69,7 @@ function Searchbar({ setSearch, setSelectedLocation }) {
             <input
               type="text"
               name="search"
+              defaultValue={initialSearch}
               placeholder={t("jobs.searchPlaceholder")}
               className="w-full h-8 px-1 focus:outline-none focus:ring-0 rounded border-none "
               onChange={handleInputChange}

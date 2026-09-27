@@ -56,6 +56,12 @@ function JobSeekerSidebar() {
       current: location.pathname === '/alerts'
     },
     {
+      name: t('savedSearches.navTitle'), key: 'savedSearches',
+      href: '/saved-searches',
+      icon: 'fas fa-magnifying-glass',
+      current: location.pathname === '/saved-searches'
+    },
+    {
       name: t('seeker.sidebar.salaryInsights'), key: 'salaryInsights',
       href: '/salary-insights',
       icon: 'fas fa-chart-line',
