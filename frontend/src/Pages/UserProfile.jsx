@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import EditProfile from "../components/UserProfile/EditProfile";
 import UpdateResume from "../components/UserProfile/UpdateResume";
 import ChangePassword from "../components/UserProfile/ChangePassword";
+import TwoFactorSettings from "../components/UserProfile/TwoFactorSettings";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useI18n } from "../i18n/I18nContext";
@@ -62,6 +63,16 @@ function UserProfile() {
             >
               {t("profile.tabPassword")}
             </div>
+            <div
+              className={`hover:cursor-pointer text-text-secondary transition-colors duration-200 ${
+                selectedSection === "security"
+                  ? "text-primary font-medium border-b-2 border-primary"
+                  : "hover:border-b-2 hover:border-primary-light"
+              } pb-3 hover:text-primary`}
+              onClick={() => switchSection("security")}
+            >
+              {t("profile.tabSecurity")}
+            </div>
           </div>
 
           <div
@@ -76,6 +87,7 @@ function UserProfile() {
         {selectedSection === "editProfile" && <EditProfile />}
         {selectedSection === "resume" && <UpdateResume />}
         {selectedSection === "password" && <ChangePassword />}
+        {selectedSection === "security" && <TwoFactorSettings />}
       </div>
     </div>
   );

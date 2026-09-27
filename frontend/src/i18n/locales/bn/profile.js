@@ -4,6 +4,7 @@ export default {
     tabProfile: "প্রোফাইল",
     tabResume: "রিজিউমে / সিভি",
     tabPassword: "পাসওয়ার্ড পরিবর্তন",
+    tabSecurity: "নিরাপত্তা",
     viewPublic: "পাবলিক প্রোফাইল দেখুন",
     loading: "লোড হচ্ছে...",
     importFromResume: "রিজিউমে থেকে আমদানি",
@@ -176,6 +177,7 @@ export default {
   company: {
     tabProfile: "কোম্পানির প্রোফাইল",
     tabPassword: "পাসওয়ার্ড পরিবর্তন",
+    tabSecurity: "নিরাপত্তা",
     title: "কোম্পানির প্রোফাইল",
     subtitle: "আপনার কোম্পানির তথ্য ও সেটিংস পরিচালনা করুন",
     logoTitle: "কোম্পানির লোগো",

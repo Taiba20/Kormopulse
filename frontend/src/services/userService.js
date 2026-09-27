@@ -18,6 +18,7 @@ export const verifyEmail = (code) => apiCall.post('/users/verify-email', { code 
 export const resendVerification = () => apiCall.post('/users/resend-verification');
 export const googleLogin = (credential, role, language) => apiCall.post('/users/google', { credential, role, language });
 export const updateLanguage = (language) => apiCall.patch('/users/language', { language });
+export const verifyTwoFactorLogin = (twoFactorToken, code) => apiCall.post('/users/2fa/login-verify', { twoFactorToken, code });
 
 // Enhanced userService object with all methods
 export const userService = {
@@ -51,6 +52,12 @@ export const userService = {
   resendVerification,
   googleLogin,
   updateLanguage,
+  verifyTwoFactorLogin,
+  getTwoFactorStatus,
+  setupTwoFactor,
+  enableTwoFactor,
+  disableTwoFactor,
+  regenerateTwoFactorBackupCodes,
 };
 
 async function login(userData) {
@@ -163,5 +170,31 @@ async function changePassword(data) {
 
 async function checkApplicationStatus(jobId) {
   const response = await apiCall.get(`/jobs/application-status/${jobId}`);
+  return response.data;
+}
+
+// Two-factor authentication (account settings, not the login step — see verifyTwoFactorLogin above)
+async function getTwoFactorStatus() {
+  const response = await apiCall.get("/users/2fa/status");
+  return response.data;
+}
+
+async function setupTwoFactor() {
+  const response = await apiCall.post("/users/2fa/setup");
+  return response.data;
+}
+
+async function enableTwoFactor(token) {
+  const response = await apiCall.post("/users/2fa/enable", { token });
+  return response.data;
+}
+
+async function disableTwoFactor(password, code) {
+  const response = await apiCall.post("/users/2fa/disable", { password, code });
+  return response.data;
+}
+
+async function regenerateTwoFactorBackupCodes(token) {
+  const response = await apiCall.post("/users/2fa/backup-codes/regenerate", { token });
   return response.data;
 }

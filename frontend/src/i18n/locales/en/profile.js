@@ -4,6 +4,7 @@ export default {
     tabProfile: "Profile",
     tabResume: "Resume / CV",
     tabPassword: "Change Password",
+    tabSecurity: "Security",
     viewPublic: "View public profile",
     loading: "Loading...",
     importFromResume: "Import from resume",
@@ -176,6 +177,7 @@ export default {
   company: {
     tabProfile: "Company Profile",
     tabPassword: "Change Password",
+    tabSecurity: "Security",
     title: "Company Profile",
     subtitle: "Manage your company information and settings",
     logoTitle: "Company Logo",

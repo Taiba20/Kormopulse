@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { userService } from "../../services/userService";
 import InputField from "../Common/FormComponents/InputField";
 import ChangePassword from "../UserProfile/ChangePassword";
+import TwoFactorSettings from "../UserProfile/TwoFactorSettings";
 import { useI18n } from "../../i18n/I18nContext";
 
 function CompanyProfile() {
@@ -170,6 +171,16 @@ function CompanyProfile() {
               }`}
             >
               {t('company.tabPassword')}
+            </button>
+            <button
+              onClick={() => setActiveTab("security")}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === "security"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              {t('company.tabSecurity')}
             </button>
           </nav>
         </div>
@@ -373,6 +384,7 @@ function CompanyProfile() {
           )}
 
           {activeTab === "password" && <ChangePassword />}
+          {activeTab === "security" && <TwoFactorSettings />}
         </div>
       </div>
     </div>
